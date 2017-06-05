@@ -7,15 +7,13 @@ using Base.LinAlg: BlasReal
 import Base: show, summary, size, ndims, length, eltype,
              *, A_mul_B!, inv, \, A_ldiv_B!
 
-if isdefined(Base, :DFT)
-    import Base.DFT: fft, ifft, bfft, fft!, ifft!, bfft!,
-                     plan_fft, plan_ifft, plan_bfft, plan_fft!, plan_ifft!, plan_bfft!,
-                     rfft, irfft, brfft, plan_rfft, plan_irfft, plan_brfft
-else
+if !isdefined(Base, :DFT)
     export fft, ifft, bfft, fft!, ifft!, bfft!,
            plan_fft, plan_ifft, plan_bfft, plan_fft!, plan_ifft!, plan_bfft!,
-           rfft, irfft, brfft, plan_rfft, plan_irfft, plan_brfft
+           rfft, irfft, brfft, plan_rfft, plan_irfft, plan_brfft,
+           fftshift, ifftshift
 end
+
 
 # DFT plan where the inputs are an array of eltype T
 abstract type Plan{T} end
@@ -357,8 +355,6 @@ three arguments have the same meaning as for [`irfft`](@ref).
 plan_irfft
 
 ##############################################################################
-
-export fftshift, ifftshift
 
 fftshift(x) = circshift(x, div.([size(x)...],2))
 
