@@ -9,7 +9,8 @@ if VERSION < v"0.7.0-DEV.986"
                  rfft, irfft, brfft, plan_rfft, plan_irfft, plan_brfft,
                  fftshift, ifftshift
     if VERSION < v"0.7.0-DEV.602"
-        import Base.DFT: Plan, plan_inv
+        import Base.DFT: Plan, ScaledPlan, plan_inv, pinv_type, normalization,
+                         rfft_output_size, brfft_output_size, realfloat, complexfloat
     end
 end
 # Reexport the Base bindings unchanged for versions before FFTW was removed, or export the
