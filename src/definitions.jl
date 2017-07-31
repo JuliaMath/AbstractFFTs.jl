@@ -282,13 +282,14 @@ for f in (:brfft, :irfft)
         $f(x::AbstractArray, d::Integer) = $pf(x, d) * x
         $f(x::AbstractArray, d::Integer, region) = $pf(x, d, region) * x
         $pf(x::AbstractArray, d::Integer;kws...) = $pf(x, d, 1:ndims(x);kws...)
-    end
-end
-
-for f in (:brfft, :irfft)
-    @eval begin
-        $f(x::AbstractArray{<:Real}, d::Integer, region=1:ndims(x)) = $f(complexfloat(x), d, region)
-        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, d::Integer, region=1:ndims(x)) = $f(complexfloat(x), d, region)
+        function $f(x::AbstractArray{<:Real}, d::Integer, region=1:ndims(x))
+            z = complexfloat(x)
+            $pf(z, d, region) * z
+        end
+        function $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, d::Integer, region=1:ndims(x))
+            z = complexfloat(x)
+            $pf(z, d, region) * z
+        end
     end
 end
 
