@@ -79,3 +79,11 @@ end
     @test AbstractFFTs.ifftshift([1 2 3; 4 5 6], (1,2)) == [5 6 4; 2 3 1]
     @test AbstractFFTs.ifftshift([1 2 3; 4 5 6], 1:2) == [5 6 4; 2 3 1]
 end
+
+@testset "normalization" begin
+    # normalization should be inferable even if region is only inferred as ::Any,
+    # need to wrap in another function to test this (note that p.region::Any for
+    # p::TestPlan)
+    f9(p::Plan{T}, sz) where {T} = AbstractFFTs.normalization(real(T), sz, p.region)
+    @test @inferred(f9(plan_fft(zeros(10), 1), 10)) == 1/10
+end
