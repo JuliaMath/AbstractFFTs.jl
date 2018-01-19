@@ -36,11 +36,11 @@ realfloat(x::AbstractArray{T}) where {T<:Real} = copy1(typeof(fftfloat(zero(T)))
 
 # copy to a 1-based array, using circular permutation
 function copy1(::Type{T}, x) where T
-    y = Array{T}(map(length, indices(x)))
+    y = Array{T}(map(length, Compat.axes(x)))
     Base.circcopy!(y, x)
 end
 
-to1(x::AbstractArray) = _to1(indices(x), x)
+to1(x::AbstractArray) = _to1(Compat.axes(x), x)
 _to1(::Tuple{Base.OneTo,Vararg{Base.OneTo}}, x) = x
 _to1(::Tuple, x) = copy1(eltype(x), x)
 
