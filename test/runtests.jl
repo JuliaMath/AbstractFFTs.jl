@@ -1,7 +1,7 @@
 # This file contains code that was formerly part of Julia. License is MIT: https://julialang.org/license
 
 using AbstractFFTs
-using Base.Test
+using Compat.Test
 
 import AbstractFFTs: Plan, plan_fft, plan_inv, plan_bfft
 import Base: A_mul_B!, *
