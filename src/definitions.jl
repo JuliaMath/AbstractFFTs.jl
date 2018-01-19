@@ -1,8 +1,11 @@
 # This file was formerly a part of Julia. License is MIT: https://julialang.org/license
 
-using Base.LinAlg: BlasReal
+using Compat
+using Compat.LinearAlgebra
+using Compat.LinearAlgebra: BlasReal
+import Compat.LinearAlgebra: A_mul_B!, A_ldiv_B!
 import Base: show, summary, size, ndims, length, eltype,
-             *, A_mul_B!, inv, \, A_ldiv_B!
+             *, inv, \
 
 # DFT plan where the inputs are an array of eltype T
 abstract type Plan{T} end
