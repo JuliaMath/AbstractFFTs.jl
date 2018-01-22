@@ -25,9 +25,10 @@ To define a new FFT implementation in your own module, you should
 * Define a new method `AbstractFFTs.plan_fft(x, region; kws...)` that returns a `MyPlan` for at least some types of
   `x` and some set of dimensions `region`.
 
-* Define a method of `A_mul_B!(y, p::MyPlan, x)` that computes the transform `p` of `x` and stores the result in `y`.
+* Define a method of `LinearAlgebra.mul!(y, p::MyPlan, x)` (or `A_mul_B!(y, p::MyPlan, x)` on Julia prior to
+  0.7.0-DEV.3204) that computes the transform `p` of `x` and stores the result in `y`.
 
-* Define a method of `*(p::MyPlan, x)`, which can simply call your `A_mul_B!` method.
+* Define a method of `*(p::MyPlan, x)`, which can simply call your `mul!` (or `A_mul_B!`) method.
   This is not defined generically in this package due to subtleties that arise for in-place and real-input FFTs.
 
 * If the inverse transform is implemented, you should also define `plan_inv(p::MyPlan)`, which should construct the

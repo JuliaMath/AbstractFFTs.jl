@@ -1,9 +1,7 @@
 # This file was formerly a part of Julia. License is MIT: https://julialang.org/license
 
-using Compat
-using Compat.LinearAlgebra
-using Compat.LinearAlgebra: BlasReal
-import Compat.LinearAlgebra: A_mul_B!, A_ldiv_B!
+using LinearAlgebra
+using LinearAlgebra: BlasReal
 import Base: show, summary, size, ndims, length, eltype,
              *, inv, \
 
@@ -36,11 +34,11 @@ realfloat(x::AbstractArray{T}) where {T<:Real} = copy1(typeof(fftfloat(zero(T)))
 
 # copy to a 1-based array, using circular permutation
 function copy1(::Type{T}, x) where T
-    y = Array{T}(uninitialized, map(length, Compat.axes(x)))
+    y = Array{T}(uninitialized, map(length, axes(x)))
     Base.circcopy!(y, x)
 end
 
-to1(x::AbstractArray) = _to1(Compat.axes(x), x)
+to1(x::AbstractArray) = _to1(axes(x), x)
 _to1(::Tuple{Base.OneTo,Vararg{Base.OneTo}}, x) = x
 _to1(::Tuple, x) = copy1(eltype(x), x)
 
@@ -96,11 +94,11 @@ contains all of the information needed to compute `fft(A, dims)` quickly.
 To apply `P` to an array `A`, use `P * A`; in general, the syntax for applying plans is much
 like that of matrices.  (A plan can only be applied to arrays of the same size as the `A`
 for which the plan was created.)  You can also apply a plan with a preallocated output array `Â`
-by calling `A_mul_B!(Â, plan, A)`.  (For `A_mul_B!`, however, the input array `A` must
+by calling `mul!(Â, plan, A)`.  (For `mul!`, however, the input array `A` must
 be a complex floating-point array like the output `Â`.) You can compute the inverse-transform plan by `inv(P)`
 and apply the inverse plan with `P \\ Â` (the inverse plan is cached and reused for
 subsequent calls to `inv` or `\\`), and apply the inverse plan to a pre-allocated output
-array `A` with `A_ldiv_B!(A, P, Â)`.
+array `A` with `ldiv!(A, P, Â)`.
 
 The `flags` argument is a bitwise-or of FFTW planner flags, defaulting to `FFTW.ESTIMATE`.
 e.g. passing `FFTW.MEASURE` or `FFTW.PATIENT` will instead spend several seconds (or more)
@@ -209,12 +207,12 @@ plan_rfft(x::AbstractArray, region; kws...) = plan_rfft(realfloat(x), region; kw
 # only require implementation to provide *(::Plan{T}, ::Array{T})
 *(p::Plan{T}, x::AbstractArray) where {T} = p * copy1(T, x)
 
-# Implementations should also implement A_mul_B!(Y, plan, X) so as to support
-# pre-allocated output arrays.  We don't define * in terms of A_mul_B!
+# Implementations should also implement mul!(Y, plan, X) so as to support
+# pre-allocated output arrays.  We don't define * in terms of mul!
 # generically here, however, because of subtleties for in-place and rfft plans.
 
 ##############################################################################
-# To support inv, \, and A_ldiv_B!(y, p, x), we require Plan subtypes
+# To support inv, \, and ldiv!(y, p, x), we require Plan subtypes
 # to have a pinv::Plan field, which caches the inverse plan, and which
 # should be initially undefined.  They should also implement
 # plan_inv(p) to construct the inverse of a plan p.
@@ -227,7 +225,7 @@ pinv_type(p::Plan) = eltype(_pinv_type(p))
 inv(p::Plan) =
     isdefined(p, :pinv) ? p.pinv::pinv_type(p) : (p.pinv = plan_inv(p))
 \(p::Plan, x::AbstractArray) = inv(p) * x
-A_ldiv_B!(y::AbstractArray, p::Plan, x::AbstractArray) = A_mul_B!(y, inv(p), x)
+LinearAlgebra.ldiv!(y::AbstractArray, p::Plan, x::AbstractArray) = LinearAlgebra.mul!(y, inv(p), x)
 
 ##############################################################################
 # implementations only need to provide the unnormalized backwards FFT,
@@ -268,8 +266,8 @@ plan_ifft!(x::AbstractArray, region; kws...) =
 
 plan_inv(p::ScaledPlan) = ScaledPlan(plan_inv(p.p), inv(p.scale))
 
-A_mul_B!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
-    scale!(p.scale, A_mul_B!(y, p.p, x))
+LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
+    scale!(p.scale, LinearAlgebra.mul!(y, p.p, x))
 
 ##############################################################################
 # Real-input DFTs are annoying because the output has a different size
