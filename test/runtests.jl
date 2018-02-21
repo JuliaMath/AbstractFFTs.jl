@@ -1,10 +1,15 @@
 # This file contains code that was formerly part of Julia. License is MIT: https://julialang.org/license
 
 using AbstractFFTs
-using Base.Test
+using AbstractFFTs: Plan
+using Compat.LinearAlgebra
+using Compat.Test
 
-import AbstractFFTs: Plan, plan_fft, plan_inv, plan_bfft
-import Base: A_mul_B!, *
+if VERSION < v"0.7.0-DEV.3204"
+    const mul! = Base.A_mul_B!
+else
+    const mul! = LinearAlgebra.mul!
+end
 
 mutable struct TestPlan{T} <: Plan{T}
     region
@@ -34,11 +39,11 @@ function dft!(y::Vector, x::Vector, sign::Int)
     return y
 end
 
-Base.A_mul_B!(y::Vector, p::TestPlan, x::Vector) = dft!(y, x, -1)
-Base.A_mul_B!(y::Vector, p::InverseTestPlan, x::Vector) = dft!(y, x, 1)
+mul!(y::Vector, p::TestPlan, x::Vector) = dft!(y, x, -1)
+mul!(y::Vector, p::InverseTestPlan, x::Vector) = dft!(y, x, 1)
 
-Base.:*(p::TestPlan, x::Vector) = A_mul_B!(copy(x), p, x)
-Base.:*(p::InverseTestPlan, x::Vector) = A_mul_B!(copy(x), p, x)
+Base.:*(p::TestPlan, x::Vector) = mul!(copy(x), p, x)
+Base.:*(p::InverseTestPlan, x::Vector) = mul!(copy(x), p, x)
 
 @testset "Custom Plan" begin
     x = AbstractFFTs.fft(collect(1:8))

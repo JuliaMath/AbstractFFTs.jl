@@ -9,12 +9,13 @@ The following packages extend the functionality provided by AbstractFFTs:
 
 ## Defining a new implementation
 
-Implementations should implement `Base.A_mul_B!(Y, plan, X)` so as to support
+Implementations should implement `LinearAlgebra.mul!(Y, plan, X)` (or
+`A_mul_B!(y, p::MyPlan, x)` on Julia prior to 0.7.0-DEV.3204) so as to support
 pre-allocated output arrays.
-We don't define `*` in terms of `A_mul_B!` generically here, however, because
+We don't define `*` in terms of `mul!` generically here, however, because
 of subtleties for in-place and real FFT plans.
 
-To support `inv`, `\`, and `A_ldiv_B!(y, plan, x)`, we require `Plan` subtypes
+To support `inv`, `\`, and `ldiv!(y, plan, x)`, we require `Plan` subtypes
 to have a `pinv::Plan` field, which caches the inverse plan, and which should be
 initially undefined.
 They should also implement `plan_inv(p)` to construct the inverse of a plan `p`.
