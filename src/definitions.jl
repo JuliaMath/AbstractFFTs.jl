@@ -8,7 +8,7 @@ import Base: show, summary, size, ndims, length, eltype,
 # DFT plan where the inputs are an array of eltype T
 abstract type Plan{T} end
 
-eltype(::Type{Plan{T}}) where {T} = T
+eltype(::Type{<:Plan{T}}) where {T} = T
 
 # size(p) should return the size of the input array for p
 size(p::Plan, d) = size(p)[d]

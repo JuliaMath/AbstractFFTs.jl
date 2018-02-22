@@ -63,6 +63,8 @@ Base.:*(p::InverseTestPlan, x::Vector) = mul!(copy(x), p, x)
 
     fftw_ifft = [Complex{Float64}(i, 0) for i in 1:8]
     @test AbstractFFTs.ifft(x) ≈ fftw_ifft
+
+    @test eltype(plan_fft(collect(1:8))) == Int
 end
 
 @testset "Shift functions" begin
