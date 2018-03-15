@@ -34,7 +34,7 @@ realfloat(x::AbstractArray{T}) where {T<:Real} = copy1(typeof(fftfloat(zero(T)))
 
 # copy to a 1-based array, using circular permutation
 function copy1(::Type{T}, x) where T
-    y = Array{T}(uninitialized, map(length, axes(x)))
+    y = Array{T}(undef, map(length, axes(x)))
     Base.circcopy!(y, x)
 end
 
