@@ -1,6 +1,8 @@
 __precompile__()
 module AbstractFFTs
 
+using Compat
+
 # After this version, the bindings can overwrite deprecated bindings in Base safely, but
 # prior to it we want to extend/reexport the Base definitions
 if VERSION < v"0.7.0-DEV.602"

@@ -2,6 +2,7 @@
 
 using AbstractFFTs
 using AbstractFFTs: Plan
+using Compat
 using Compat.LinearAlgebra
 using Compat.Test
 
