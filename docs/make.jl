@@ -2,8 +2,6 @@ using Documenter, AbstractFFTs
 
 makedocs(
     modules = [AbstractFFTs],
-    clean = false,
-    format = :html,
     sitename = "AbstractFFTs.jl",
     pages = Any[
         "Home" => "index.md",
@@ -13,9 +11,6 @@ makedocs(
 )
 
 deploydocs(
-    julia = "nightly",
     repo = "github.com/JuliaMath/AbstractFFTs.jl.git",
     target = "build",
-    deps = nothing,
-    make = nothing,
 )

@@ -246,13 +246,7 @@ size(p::ScaledPlan) = size(p.p)
 show(io::IO, p::ScaledPlan) = print(io, p.scale, " * ", p.p)
 summary(p::ScaledPlan) = string(p.scale, " * ", summary(p.p))
 
-if VERSION >= v"0.7.0-DEV.3665"
-    *(p::ScaledPlan, x::AbstractArray) = LinearAlgebra.rmul!(p.p * x, p.scale)
-elseif VERSION >= v"0.7.0-DEV.3563"
-    *(p::ScaledPlan, x::AbstractArray) = LinearAlgebra.mul1!(p.p * x, p.scale)
-else
-    *(p::ScaledPlan, x::AbstractArray) = scale!(p.p * x, p.scale)
-end
+*(p::ScaledPlan, x::AbstractArray) = LinearAlgebra.rmul!(p.p * x, p.scale)
 
 *(α::Number, p::Plan) = ScaledPlan(p, α)
 *(p::Plan, α::Number) = ScaledPlan(p, α)
@@ -272,16 +266,8 @@ plan_ifft!(x::AbstractArray, region; kws...) =
 
 plan_inv(p::ScaledPlan) = ScaledPlan(plan_inv(p.p), inv(p.scale))
 
-if VERSION >= v"0.7.0-DEV.3665"
-    LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
-        LinearAlgebra.lmul!(p.scale, LinearAlgebra.mul!(y, p.p, x))
-elseif VERSION >= v"0.7.0-DEV.3563"
-    LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
-        LinearAlgebra.mul2!(p.scale, LinearAlgebra.mul!(y, p.p, x))
-else
-    LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
-        scale!(p.scale, LinearAlgebra.mul!(y, p.p, x))
-end
+LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
+    LinearAlgebra.lmul!(p.scale, LinearAlgebra.mul!(y, p.p, x))
 
 ##############################################################################
 # Real-input DFTs are annoying because the output has a different size

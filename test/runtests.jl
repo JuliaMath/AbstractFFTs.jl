@@ -2,15 +2,8 @@
 
 using AbstractFFTs
 using AbstractFFTs: Plan
-using Compat
-using Compat.LinearAlgebra
-using Compat.Test
-
-if VERSION < v"0.7.0-DEV.3204"
-    const mul! = Base.A_mul_B!
-else
-    const mul! = LinearAlgebra.mul!
-end
+using LinearAlgebra
+using Test
 
 mutable struct TestPlan{T} <: Plan{T}
     region
