@@ -3,7 +3,8 @@ language: julia
 os:
   - linux
 julia:
-  - 0.6
+  - 1.0
+  - 1.1
   - nightly
 notifications:
   email: false
@@ -12,5 +13,13 @@ notifications:
 #  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 #  - julia -e 'Pkg.clone(pwd()); Pkg.build("AbstractFFTs"); Pkg.test("AbstractFFTs"; coverage=true)'
 after_success:
-  - julia -e 'VERSION >= v"0.7-" && (Pkg.add("Coverage"); cd(Pkg.dir("AbstractFFTs")); using Coverage; Coveralls.submit(Coveralls.process_folder()))'
-  - julia -e 'VERSION >= v"0.7-" && (Pkg.add("Documenter"); cd(Pkg.dir("AbstractFFTs")); include(joinpath("docs", "make.jl")))'
+  - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())';
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.0
+      os: linux
+      script:
+        - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        - julia --project=docs/ docs/make.jl
+      after_success: skip

@@ -1,3 +1,8 @@
+```@meta
+DocTestSetup = :(using AbstractFFTs)
+CurrentModule = AbstractFFTs
+```
+
 # AbstractFFTs.jl
 
 This package provides a generic framework for defining
