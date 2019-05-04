@@ -19,7 +19,6 @@ AbstractFFTs.brfft
 AbstractFFTs.plan_rfft
 AbstractFFTs.plan_brfft
 AbstractFFTs.plan_irfft
-AbstractFFTs.fftshift(::Any)
-AbstractFFTs.fftshift(::Any, ::Any)
+AbstractFFTs.fftshift
 AbstractFFTs.ifftshift
 ```
