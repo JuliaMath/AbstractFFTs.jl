@@ -1,5 +1,6 @@
 name = "AbstractFFTs"
 uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
+version = "0.4.1"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
