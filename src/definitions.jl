@@ -3,7 +3,7 @@
 using LinearAlgebra
 using LinearAlgebra: BlasReal
 import Base: show, summary, size, ndims, length, eltype,
-             *, inv, \
+             *, inv, \, size, step, getindex, iterate
 
 # DFT plan where the inputs are an array of eltype T
 abstract type Plan{T} end
@@ -395,6 +395,49 @@ function ifftshift(x,dim)
     end
     circshift(x, s)
 end
+
+##############################################################################
+
+
+struct Frequencies{T<:Real} <: AbstractVector{T}
+    nreal::Int
+    n::Int
+    multiplier::T
+end
+
+unsafe_getindex(x::Frequencies, i::Int) =
+    (i-1+ifelse(i <= x.nreal, 0, -x.n))*x.multiplier
+function Base.getindex(x::Frequencies, i::Int)
+    (i >= 1 && i <= x.n) || throw(BoundsError())
+    unsafe_getindex(x, i)
+end
+
+function Base.iterate(x::Frequencies, i::Int=1)
+    i > x.n ? nothing : (unsafe_getindex(x,i), i + 1)
+end
+Base.size(x::Frequencies) = (x.n,)
+Base.step(x::Frequencies) = x.multiplier
+
+"""
+    fftfreq(n, fs=1)
+Return discrete fourier transform sample frequencies. The returned
+Frequencies object is an AbstractVector containing the frequency
+bin centers at every sample point. `fs` is the sample rate of the
+input signal.
+"""
+fftfreq(n::Int, fs::Real=1) = Frequencies(((n-1) >> 1)+1, n, fs/n)
+
+"""
+    rfftfreq(n, fs=1)
+Return discrete fourier transform sample frequencies for use with
+`rfft`. The returned Frequencies object is an AbstractVector
+containing the frequency bin centers at every sample point. `fs`
+is the sample rate of the input signal.
+"""
+rfftfreq(n::Int, fs::Real=1) = Frequencies((n >> 1)+1, (n >> 1)+1, fs/n)
+
+fftshift(x::Frequencies) = (x.nreal-x.n:x.nreal-1)*x.multiplier
+
 
 ##############################################################################
 
