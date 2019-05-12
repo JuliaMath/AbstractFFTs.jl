@@ -400,15 +400,20 @@ end
 
 
 struct Frequencies{T<:Number} <: AbstractVector{T}
-    nreal::Int
+    n_nonnegative::Int
     n::Int
     multiplier::T
+
+    Frequencies(n_nonnegative::Int, n::Int, multiplier::T) where {T<:Number} = begin
+        1 ≤ n_nonnegative ≤ n || error("Condition 1 ≤ n_nonnegative ≤ n isn't satisfied.")
+        return new{T}(n_nonnegative, n, multiplier)
+    end
 end
 
 unsafe_getindex(x::Frequencies, i::Int) =
-    (i-1+ifelse(i <= x.nreal, 0, -x.n))*x.multiplier
-function Base.getindex(x::Frequencies, i::Int)
-    (i >= 1 && i <= x.n) || throw(BoundsError())
+    (i-1+ifelse(i <= x.n_nonnegative, 0, -x.n))*x.multiplier
+@inline function Base.getindex(x::Frequencies, i::Int)
+    @boundscheck Base.checkbounds(x, i)
     unsafe_getindex(x, i)
 end
 
@@ -420,23 +425,23 @@ Base.step(x::Frequencies) = x.multiplier
 
 """
     fftfreq(n, fs=1)
-Return discrete fourier transform sample frequencies. The returned
-Frequencies object is an AbstractVector containing the frequency
+Return the discrete Fourier transform (DFT) sample frequencies for a DFT of length `n`. The returned
+`Frequencies` object is an `AbstractVector` containing the frequency
 bin centers at every sample point. `fs` is the sample rate of the
 input signal.
 """
-fftfreq(n::Int, fs::Number=1) = Frequencies(((n-1) >> 1)+1, n, fs/n)
+fftfreq(n::Int, fs::Number=1) = Frequencies((n+1) >> 1, n, fs/n)
 
 """
     rfftfreq(n, fs=1)
-Return discrete fourier transform sample frequencies for use with
-`rfft`. The returned Frequencies object is an AbstractVector
+Return the discrete Fourier transform (DFT) sample frequencies for a real DFT of length `n`.
+The returned `Frequencies` object is an `AbstractVector`
 containing the frequency bin centers at every sample point. `fs`
 is the sample rate of the input signal.
 """
 rfftfreq(n::Int, fs::Number=1) = Frequencies((n >> 1)+1, (n >> 1)+1, fs/n)
 
-fftshift(x::Frequencies) = (x.nreal-x.n:x.nreal-1)*x.multiplier
+fftshift(x::Frequencies) = (x.n_nonnegative-x.n:x.n_nonnegative-1)*x.multiplier
 
 
 ##############################################################################
