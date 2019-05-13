@@ -405,7 +405,7 @@ struct Frequencies{T<:Number} <: AbstractVector{T}
     multiplier::T
 
     Frequencies(n_nonnegative::Int, n::Int, multiplier::T) where {T<:Number} = begin
-        1 ≤ n_nonnegative ≤ n || error("Condition 1 ≤ n_nonnegative ≤ n isn't satisfied.")
+        1 ≤ n_nonnegative ≤ n || throw(ArgumentError("Condition 1 ≤ n_nonnegative ≤ n isn't satisfied."))
         return new{T}(n_nonnegative, n, multiplier)
     end
 end

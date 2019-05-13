@@ -96,6 +96,8 @@ end
     @test fftfreq(5, 2) == [0.0, 0.4, 0.8, -0.8, -0.4]
     # <:Number type compatibility
     @test eltype(fftfreq(5, ComplexF64(2))) == ComplexF64
+
+    @test_throws ArgumentError Frequencies(12, 10, 1)
 end
 
 @testset "normalization" begin
