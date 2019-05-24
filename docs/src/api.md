@@ -21,4 +21,6 @@ AbstractFFTs.plan_brfft
 AbstractFFTs.plan_irfft
 AbstractFFTs.fftshift
 AbstractFFTs.ifftshift
+AbstractFFTs.fftfreq
+AbstractFFTs.rfftfreq
 ```

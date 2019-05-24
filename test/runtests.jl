@@ -81,6 +81,25 @@ end
     @test AbstractFFTs.ifftshift([1 2 3; 4 5 6], 1:2) == [5 6 4; 2 3 1]
 end
 
+@testset "FFT Frequencies" begin
+    # N even
+    @test fftfreq(8) == [0.0, 0.125, 0.25, 0.375, -0.5, -0.375, -0.25, -0.125]
+    @test rfftfreq(8) == [0.0, 0.125, 0.25, 0.375, 0.5]
+    @test fftshift(fftfreq(8)) == -0.5:0.125:0.375
+
+    # N odd
+    @test fftfreq(5) == [0.0, 0.2, 0.4, -0.4, -0.2]
+    @test rfftfreq(5) == [0.0, 0.2, 0.4]
+    @test fftshift(fftfreq(5)) == -0.4:0.2:0.4
+
+    # Sampling Frequency
+    @test fftfreq(5, 2) == [0.0, 0.4, 0.8, -0.8, -0.4]
+    # <:Number type compatibility
+    @test eltype(fftfreq(5, ComplexF64(2))) == ComplexF64
+
+    @test_throws ArgumentError Frequencies(12, 10, 1)
+end
+
 @testset "normalization" begin
     # normalization should be inferable even if region is only inferred as ::Any,
     # need to wrap in another function to test this (note that p.region::Any for

@@ -3,7 +3,7 @@
 using LinearAlgebra
 using LinearAlgebra: BlasReal
 import Base: show, summary, size, ndims, length, eltype,
-             *, inv, \
+             *, inv, \, size, step, getindex, iterate
 
 # DFT plan where the inputs are an array of eltype T
 abstract type Plan{T} end
@@ -395,6 +395,54 @@ function ifftshift(x,dim)
     end
     circshift(x, s)
 end
+
+##############################################################################
+
+
+struct Frequencies{T<:Number} <: AbstractVector{T}
+    n_nonnegative::Int
+    n::Int
+    multiplier::T
+
+    Frequencies(n_nonnegative::Int, n::Int, multiplier::T) where {T<:Number} = begin
+        1 ≤ n_nonnegative ≤ n || throw(ArgumentError("Condition 1 ≤ n_nonnegative ≤ n isn't satisfied."))
+        return new{T}(n_nonnegative, n, multiplier)
+    end
+end
+
+unsafe_getindex(x::Frequencies, i::Int) =
+    (i-1+ifelse(i <= x.n_nonnegative, 0, -x.n))*x.multiplier
+@inline function Base.getindex(x::Frequencies, i::Int)
+    @boundscheck Base.checkbounds(x, i)
+    unsafe_getindex(x, i)
+end
+
+function Base.iterate(x::Frequencies, i::Int=1)
+    i > x.n ? nothing : (unsafe_getindex(x,i), i + 1)
+end
+Base.size(x::Frequencies) = (x.n,)
+Base.step(x::Frequencies) = x.multiplier
+
+"""
+    fftfreq(n, fs=1)
+Return the discrete Fourier transform (DFT) sample frequencies for a DFT of length `n`. The returned
+`Frequencies` object is an `AbstractVector` containing the frequency
+bin centers at every sample point. `fs` is the sample rate of the
+input signal.
+"""
+fftfreq(n::Int, fs::Number=1) = Frequencies((n+1) >> 1, n, fs/n)
+
+"""
+    rfftfreq(n, fs=1)
+Return the discrete Fourier transform (DFT) sample frequencies for a real DFT of length `n`.
+The returned `Frequencies` object is an `AbstractVector`
+containing the frequency bin centers at every sample point. `fs`
+is the sample rate of the input signal.
+"""
+rfftfreq(n::Int, fs::Number=1) = Frequencies((n >> 1)+1, (n >> 1)+1, fs/n)
+
+fftshift(x::Frequencies) = (x.n_nonnegative-x.n:x.n_nonnegative-1)*x.multiplier
+
 
 ##############################################################################
 
