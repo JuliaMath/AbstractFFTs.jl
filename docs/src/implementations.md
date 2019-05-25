@@ -6,6 +6,8 @@ The following packages extend the functionality provided by AbstractFFTs:
 
 * [FFTW.jl](https://github.com/JuliaMath/FFTW.jl): Bindings for the
   [FFTW](http://www.fftw.org) library. This also used to be part of Base Julia.
+* [FastTransforms.jl](https://github.com/JuliaApproximation/FastTransforms.jl):
+  Pure-Julia implementation of FFT, with support for arbitrary AbstractFloat types.
 
 ## Defining a new implementation
 
