@@ -411,7 +411,7 @@ struct Frequencies{T<:Number} <: AbstractVector{T}
 end
 
 unsafe_getindex(x::Frequencies, i::Int) =
-    (i-1+ifelse(i <= x.n_nonnegative, 0, -x.n))*x.multiplier
+    (i-1-ifelse(i <= x.n_nonnegative, 0, x.n))*x.multiplier
 @inline function Base.getindex(x::Frequencies, i::Int)
     @boundscheck Base.checkbounds(x, i)
     unsafe_getindex(x, i)
