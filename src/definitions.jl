@@ -346,8 +346,6 @@ plan_irfft
 
 ##############################################################################
 
-fftshift(x) = circshift(x, div.([size(x)...],2))
-
 """
     fftshift(x, [dim])
 
@@ -363,15 +361,10 @@ If `dim` is not given then the signal is shifted along each dimension.
 """
 fftshift
 
-function fftshift(x,dim)
-    s = zeros(Int,ndims(x))
-    for i in dim
-        s[i] = div(size(x,i),2)
-    end
+function fftshift(x, dim = 1:ndims(x))
+    s = ntuple(d -> d in dim ? div(size(x,d),2) : 0, ndims(x))
     circshift(x, s)
 end
-
-ifftshift(x) = circshift(x, div.([size(x)...],-2))
 
 """
     ifftshift(x, [dim])
@@ -388,11 +381,8 @@ If `dim` is not given then the signal is shifted along each dimension.
 """
 ifftshift
 
-function ifftshift(x,dim)
-    s = zeros(Int,ndims(x))
-    for i in dim
-        s[i] = -div(size(x,i),2)
-    end
+function ifftshift(x, dim = 1:ndims(x))
+    s = ntuple(d -> d in dim ? -div(size(x,d),2) : 0, ndims(x))
     circshift(x, s)
 end
 
@@ -422,6 +412,8 @@ function Base.iterate(x::Frequencies, i::Int=1)
 end
 Base.size(x::Frequencies) = (x.n,)
 Base.step(x::Frequencies) = x.multiplier
+
+Base.copy(x::Frequencies) = x
 
 """
     fftfreq(n, fs=1)
