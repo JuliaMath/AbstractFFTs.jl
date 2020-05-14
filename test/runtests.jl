@@ -82,6 +82,9 @@ end
 end
 
 @testset "FFT Frequencies" begin
+    @test fftfreq(8) isa Frequencies
+    @test copy(fftfreq(8)) isa Frequencies
+
     # N even
     @test fftfreq(8) == [0.0, 0.125, 0.25, 0.375, -0.5, -0.375, -0.25, -0.125]
     @test rfftfreq(8) == [0.0, 0.125, 0.25, 0.375, 0.5]
