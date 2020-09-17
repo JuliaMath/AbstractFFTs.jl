@@ -419,8 +419,34 @@ Base.copy(x::Frequencies) = x
     fftfreq(n, fs=1)
 Return the discrete Fourier transform (DFT) sample frequencies for a DFT of length `n`. The returned
 `Frequencies` object is an `AbstractVector` containing the frequency
-bin centers at every sample point. `fs` is the sample rate of the
-input signal.
+bin centers at every sample point. `fs` is the sampling rate of the
+input signal, which is the reciprocal of the sample spacing.
+
+Given a window of length `n` and a sampling rate `fs`, the frequencies returned are 
+
+```julia
+[0, 1, ..., n/2 - 1, -n/2, ..., -1]  * fs/n   # if n is even
+[0, 1, ..., (n-1)/2, -(n-1)/2, ..., -1]  * fs/n  # if n is odd
+```
+
+# Examples
+
+```jldoctest; setup=:(using AbstractFFTs)
+julia> fftfreq(4, 1)
+4-element Frequencies{Float64}:
+  0.0
+  0.25
+ -0.5
+ -0.25
+
+julia> fftfreq(5, 2)
+5-element Frequencies{Float64}:
+  0.0
+  0.4
+  0.8
+ -0.8
+ -0.4
+```
 """
 fftfreq(n::Int, fs::Number=1) = Frequencies((n+1) >> 1, n, fs/n)
 
@@ -429,7 +455,33 @@ fftfreq(n::Int, fs::Number=1) = Frequencies((n+1) >> 1, n, fs/n)
 Return the discrete Fourier transform (DFT) sample frequencies for a real DFT of length `n`.
 The returned `Frequencies` object is an `AbstractVector`
 containing the frequency bin centers at every sample point. `fs`
-is the sample rate of the input signal.
+is the sampling rate of the input signal, which is the reciprocal of the sample spacing.
+
+Given a window of length `n` and a sampling rate `fs`, the frequencies returned are 
+
+```julia
+[0, 1, ..., n/2]  * fs/n  # if n is even
+[0, 1, ..., (n-1)/2]  * fs/n  # if n is odd
+```
+
+!!! note
+    The Nyquist-frequency component is considered to be positive, unlike [`fftfreq`](@ref).
+
+# Examples
+
+```jldoctest; setup=:(using AbstractFFTs)
+julia> rfftfreq(4, 1)
+3-element Frequencies{Float64}:
+ 0.0
+ 0.25
+ 0.5
+
+julia> rfftfreq(5, 2)
+3-element Frequencies{Float64}:
+ 0.0
+ 0.4
+ 0.8
+```
 """
 rfftfreq(n::Int, fs::Number=1) = Frequencies((n >> 1)+1, (n >> 1)+1, fs/n)
 
