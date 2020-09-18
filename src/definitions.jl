@@ -425,8 +425,8 @@ input signal, which is the reciprocal of the sample spacing.
 Given a window of length `n` and a sampling rate `fs`, the frequencies returned are 
 
 ```julia
-[0, 1, ..., n/2 - 1, -n/2, ..., -1]  * fs/n   # if n is even
-[0, 1, ..., (n-1)/2, -(n-1)/2, ..., -1]  * fs/n  # if n is odd
+[0:n÷2-1; -n÷2:-1]  .* fs/n   # if n is even
+[0:(n-1)÷2; -(n-1)÷2:-1]  .* fs/n  # if n is odd
 ```
 
 # Examples
@@ -460,8 +460,8 @@ is the sampling rate of the input signal, which is the reciprocal of the sample 
 Given a window of length `n` and a sampling rate `fs`, the frequencies returned are 
 
 ```julia
-[0, 1, ..., n/2]  * fs/n  # if n is even
-[0, 1, ..., (n-1)/2]  * fs/n  # if n is odd
+[0:n÷2;]  .* fs/n  # if n is even
+[0:(n-1)÷2;]  .* fs/n  # if n is odd
 ```
 
 !!! note
