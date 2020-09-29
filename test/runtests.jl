@@ -101,6 +101,13 @@ end
     @test eltype(fftfreq(5, ComplexF64(2))) == ComplexF64
 
     @test_throws ArgumentError Frequencies(12, 10, 1)
+
+    @testset "scaling" begin
+        @test fftfreq(4, 1) * 2 === fftfreq(4, 2)
+        @test fftfreq(4, 1) .* 2 === fftfreq(4, 2)
+        @test 2 * fftfreq(4, 1) === fftfreq(4, 2)
+        @test 2 .* fftfreq(4, 1) === fftfreq(4, 2)
+    end
 end
 
 @testset "normalization" begin

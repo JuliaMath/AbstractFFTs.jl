@@ -415,6 +415,12 @@ Base.step(x::Frequencies) = x.multiplier
 
 Base.copy(x::Frequencies) = x
 
+# Retain the lazy representation upon scalar multiplication
+Broadcast.broadcasted(::Base.Broadcast.DefaultArrayStyle{1}, ::typeof(*), f::Frequencies, x::Number) =
+    Frequencies(f.n_nonnegative, f.n, f.multiplier * x)
+Broadcast.broadcasted(s::Base.Broadcast.DefaultArrayStyle{1}, ::typeof(*), x::Number, f::Frequencies) =
+    Broadcast.broadcasted(s, *, f, x)
+
 """
     fftfreq(n, fs=1)
 Return the discrete Fourier transform (DFT) sample frequencies for a DFT of length `n`. The returned
