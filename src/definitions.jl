@@ -420,6 +420,8 @@ Broadcast.broadcasted(::Base.Broadcast.DefaultArrayStyle{1}, ::typeof(*), f::Fre
     Frequencies(f.n_nonnegative, f.n, f.multiplier * x)
 Broadcast.broadcasted(s::Base.Broadcast.DefaultArrayStyle{1}, ::typeof(*), x::Number, f::Frequencies) =
     Broadcast.broadcasted(s, *, f, x)
+Broadcast.broadcasted(::Base.Broadcast.DefaultArrayStyle{1}, ::typeof(/), f::Frequencies, x::Number) =
+    Frequencies(f.n_nonnegative, f.n, f.multiplier / x)
 
 """
     fftfreq(n, fs=1)
