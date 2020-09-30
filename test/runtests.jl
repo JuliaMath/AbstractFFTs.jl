@@ -110,6 +110,9 @@ end
 
         @test fftfreq(4, 1) / 2 === fftfreq(4, 1/2)
         @test fftfreq(4, 1) ./ 2 === fftfreq(4, 1/2)
+
+        @test 2 \ fftfreq(4, 1) === fftfreq(4, 1/2)
+        @test 2 .\ fftfreq(4, 1) === fftfreq(4, 1/2)
     end
 end
 

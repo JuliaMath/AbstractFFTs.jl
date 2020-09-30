@@ -419,6 +419,7 @@ Base.copy(x::Frequencies) = x
 Broadcast.broadcasted(::typeof(*), f::Frequencies, x::Number) = Frequencies(f.n_nonnegative, f.n, f.multiplier * x)
 Broadcast.broadcasted(::typeof(*), x::Number, f::Frequencies) = Broadcast.broadcasted(*, f, x)
 Broadcast.broadcasted(::typeof(/), f::Frequencies, x::Number) = Frequencies(f.n_nonnegative, f.n, f.multiplier / x)
+Broadcast.broadcasted(::typeof(\), x::Number, f::Frequencies) = Broadcast.broadcasted(/, f, x)
 
 """
     fftfreq(n, fs=1)
