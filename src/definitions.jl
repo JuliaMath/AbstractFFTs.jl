@@ -421,6 +421,10 @@ Broadcast.broadcasted(::typeof(*), x::Number, f::Frequencies) = Broadcast.broadc
 Broadcast.broadcasted(::typeof(/), f::Frequencies, x::Number) = Frequencies(f.n_nonnegative, f.n, f.multiplier / x)
 Broadcast.broadcasted(::typeof(\), x::Number, f::Frequencies) = Broadcast.broadcasted(/, f, x)
 
+Base.maximum(f::Frequencies) = ifelse(f.multiplier >= 0, (f.n_nonnegative - 1) * f.multiplier, (f.n_nonnegative - f.n) * f.multiplier)
+Base.minimum(f::Frequencies) = ifelse(f.multiplier >= 0, (f.n_nonnegative - f.n) * f.multiplier, (f.n_nonnegative - 1) * f.multiplier)
+Base.extrema(f::Frequencies) = (minimum(f), maximum(f))
+
 """
     fftfreq(n, fs=1)
 Return the discrete Fourier transform (DFT) sample frequencies for a DFT of length `n`. The returned
