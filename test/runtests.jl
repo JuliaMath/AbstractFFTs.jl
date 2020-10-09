@@ -114,6 +114,18 @@ end
         @test 2 \ fftfreq(4, 1) === fftfreq(4, 1/2)
         @test 2 .\ fftfreq(4, 1) === fftfreq(4, 1/2)
     end
+
+    @testset "extrema" begin
+        function check_extrema(freqs)
+            for f in [minimum, maximum, extrema]
+                @test f(freqs) == f(collect(freqs)) == f(fftshift(freqs))
+            end
+        end
+        for f in (fftfreq, rfftfreq), n in (8, 9), multiplier in (2, 1/3, -1/7)
+            freqs = f(n, multiplier)
+            check_extrema(freqs)
+        end
+    end
 end
 
 @testset "normalization" begin
