@@ -13,4 +13,5 @@ makedocs(
 deploydocs(
     repo = "github.com/JuliaMath/AbstractFFTs.jl.git",
     target = "build",
+    push_preview = true
 )
