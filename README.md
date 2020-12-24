@@ -10,7 +10,7 @@ Documentation:
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaMath.github.io/AbstractFFTs.jl/latest)
 
 This package is mainly not intended to be used directly.
-Instead, developers of packages that implement FFTs (such as [FFTW.jl](https://github.com/JuliaMath/FFTW.jl))
+Instead, developers of packages that implement FFTs (such as [FFTW.jl](https://github.com/JuliaMath/FFTW.jl) or [FastTransforms.jl](https://github.com/JuliaApproximation/FastTransforms.jl))
 extend the types/functions defined in `AbstractFFTs`.
 This allows multiple FFT packages to co-exist with the same underlying `fft(x)` and `plan_fft(x)` interface.
 
