@@ -5,6 +5,16 @@ using AbstractFFTs: Plan
 using LinearAlgebra
 using Test
 
+@testset "rfft sizes" begin
+    A = rand(11, 10)
+    @test @inferred(AbstractFFTs.rfft_output_size(A, 1)) == (6, 10)
+    @test @inferred(AbstractFFTs.rfft_output_size(A, 2)) == (11, 6)
+    A1 = rand(6, 10); A2 = rand(11, 6)
+    @test @inferred(AbstractFFTs.brfft_output_size(A1, 11, 1)) == (11, 10)
+    @test @inferred(AbstractFFTs.brfft_output_size(A2, 10, 2)) == (11, 10)
+    @test_throws AssertionError AbstractFFTs.brfft_output_size(A1, 10, 2)
+end
+
 mutable struct TestPlan{T} <: Plan{T}
     region
     pinv::Plan{T}

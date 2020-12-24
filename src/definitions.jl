@@ -256,7 +256,7 @@ summary(p::ScaledPlan) = string(p.scale, " * ", summary(p.p))
 *(p::Plan, I::UniformScaling) = ScaledPlan(p, I.λ)
 
 # Normalization for ifft, given unscaled bfft, is 1/prod(dimensions)
-normalization(T, sz, region) = one(T) / Int(prod([sz...][[region...]]))::Int
+normalization(::Type{T}, sz, region) where T = one(T) / Int(prod([sz...][[region...]]))::Int
 normalization(X, region) = normalization(real(eltype(X)), size(X), region)
 
 plan_ifft(x::AbstractArray, region; kws...) =
@@ -316,19 +316,17 @@ transformed dimensions (of the real output array) in order to obtain the inverse
 """
 brfft
 
-function rfft_output_size(x::AbstractArray, region)
+rfft_output_size(x::AbstractArray, region) = rfft_output_size(size(x), region)
+function rfft_output_size(sz::Dims{N}, region) where {N}
     d1 = first(region)
-    osize = [size(x)...]
-    osize[d1] = osize[d1]>>1 + 1
-    return osize
+    return ntuple(d -> d == d1 ? sz[d]>>1 + 1 : sz[d], Val(N))
 end
 
-function brfft_output_size(x::AbstractArray, d::Integer, region)
+brfft_output_size(x::AbstractArray, d::Integer, region) = brfft_output_size(size(x), d, region)
+function brfft_output_size(sz::Dims{N}, d::Integer, region) where {N}
     d1 = first(region)
-    osize = [size(x)...]
-    @assert osize[d1] == d>>1 + 1
-    osize[d1] = d
-    return osize
+    @assert sz[d1] == d>>1 + 1
+    return ntuple(i -> i == d1 ? d : sz[i], Val(N))
 end
 
 plan_irfft(x::AbstractArray{Complex{T}}, d::Integer, region; kws...) where {T} =
@@ -432,7 +430,7 @@ Return the discrete Fourier transform (DFT) sample frequencies for a DFT of leng
 bin centers at every sample point. `fs` is the sampling rate of the
 input signal, which is the reciprocal of the sample spacing.
 
-Given a window of length `n` and a sampling rate `fs`, the frequencies returned are 
+Given a window of length `n` and a sampling rate `fs`, the frequencies returned are
 
 ```julia
 [0:n÷2-1; -n÷2:-1]  * fs/n   # if n is even
@@ -467,7 +465,7 @@ The returned `Frequencies` object is an `AbstractVector`
 containing the frequency bin centers at every sample point. `fs`
 is the sampling rate of the input signal, which is the reciprocal of the sample spacing.
 
-Given a window of length `n` and a sampling rate `fs`, the frequencies returned are 
+Given a window of length `n` and a sampling rate `fs`, the frequencies returned are
 
 ```julia
 [0:n÷2;]  * fs/n  # if n is even
