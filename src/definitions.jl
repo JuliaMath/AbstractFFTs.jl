@@ -429,6 +429,7 @@ Return the discrete Fourier transform (DFT) sample frequencies for a DFT of leng
 `Frequencies` object is an `AbstractVector` containing the frequency
 bin centers at every sample point. `fs` is the sampling rate of the
 input signal, which is the reciprocal of the sample spacing.
+The return values are not to be confused with angular frequency.
 
 Given a window of length `n` and a sampling rate `fs`, the frequencies returned are
 
@@ -464,6 +465,7 @@ Return the discrete Fourier transform (DFT) sample frequencies for a real DFT of
 The returned `Frequencies` object is an `AbstractVector`
 containing the frequency bin centers at every sample point. `fs`
 is the sampling rate of the input signal, which is the reciprocal of the sample spacing.
+The return values are not to be confused with angular frequency.
 
 Given a window of length `n` and a sampling rate `fs`, the frequencies returned are
 
