@@ -419,8 +419,8 @@ Broadcast.broadcasted(::typeof(*), x::Number, f::Frequencies) = Broadcast.broadc
 Broadcast.broadcasted(::typeof(/), f::Frequencies, x::Number) = Frequencies(f.n_nonnegative, f.n, f.multiplier / x)
 Broadcast.broadcasted(::typeof(\), x::Number, f::Frequencies) = Broadcast.broadcasted(/, f, x)
 
-Base.maximum(f::Frequencies) = (f.n_nonnegative - ifelse(f.multiplier >= 0, 1, f.n)) * f.multiplier
-Base.minimum(f::Frequencies) = (f.n_nonnegative - ifelse(f.multiplier >= 0, f.n, 1)) * f.multiplier
+Base.maximum(f::Frequencies{T}) where T = (f.n_nonnegative - ifelse(f.multiplier >= zero(T), 1, f.n)) * f.multiplier
+Base.minimum(f::Frequencies{T}) where T = (f.n_nonnegative - ifelse(f.multiplier >= zero(T), f.n, 1)) * f.multiplier
 Base.extrema(f::Frequencies) = (minimum(f), maximum(f))
 
 """

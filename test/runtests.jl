@@ -5,6 +5,8 @@ using AbstractFFTs: Plan
 using LinearAlgebra
 using Test
 
+import Unitful
+
 @testset "rfft sizes" begin
     A = rand(11, 10)
     @test @inferred(AbstractFFTs.rfft_output_size(A, 1)) == (6, 10)
@@ -131,7 +133,7 @@ end
                 @test f(freqs) == f(collect(freqs)) == f(fftshift(freqs))
             end
         end
-        for f in (fftfreq, rfftfreq), n in (8, 9), multiplier in (2, 1/3, -1/7)
+        for f in (fftfreq, rfftfreq), n in (8, 9), multiplier in (2, 1/3, -1/7, 1.0*Unitful.mm)
             freqs = f(n, multiplier)
             check_extrema(freqs)
         end
