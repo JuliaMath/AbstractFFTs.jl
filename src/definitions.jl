@@ -462,6 +462,13 @@ Base.maximum(f::Frequencies{T}) where T = (f.n_nonnegative - ifelse(f.multiplier
 Base.minimum(f::Frequencies{T}) where T = (f.n_nonnegative - ifelse(f.multiplier >= zero(T), f.n, 1)) * f.multiplier
 Base.extrema(f::Frequencies) = (minimum(f), maximum(f))
 
+function Base.show(io::IO, f::Frequencies)
+    r1 = 0:f.n_nonnegative-1
+    r2 = -f.n + f.n_nonnegative:-1
+    v = "[$r1;" * (isempty(r2) ? "" : " $r2") * "]"
+    print(io, "$v*$(step(f))")
+end
+
 """
     fftfreq(n, fs=1)
 Return the discrete Fourier transform (DFT) sample frequencies for a DFT of length `n`. The returned

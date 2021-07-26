@@ -108,6 +108,22 @@ end
             check_extrema(freqs)
         end
     end
+
+    @testset "show" begin
+        for f in Any[fftfreq(6), fftfreq(7, 2), rfftfreq(5, 0.3), rfftfreq(4, 3)]
+            fnn = f.n_nonnegative
+            r1 = 0:fnn - 1
+            r2 = -length(f) + fnn:-1
+            v = [r1; r2] * step(f)
+            @test v ≈ f
+            s = repr(f)
+            if !isempty(r2) # fftfreq
+                @test s == "[$r1; $r2]*$(step(f))"
+            else # rfftfreq
+                @test s == "[$r1;]*$(step(f))"
+            end
+        end
+    end
 end
 
 @testset "normalization" begin
