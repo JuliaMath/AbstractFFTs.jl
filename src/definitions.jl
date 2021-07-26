@@ -465,8 +465,10 @@ Base.extrema(f::Frequencies) = (minimum(f), maximum(f))
 function Base.show(io::IO, f::Frequencies)
     r1 = 0:f.n_nonnegative-1
     r2 = -f.n + f.n_nonnegative:-1
-    v = "[$r1;" * (isempty(r2) ? "" : " $r2") * "]"
-    print(io, "$v*$(step(f))")
+    print(io, "[", r1, ";")
+    !isempty(r2) && print(io, " ", r2)
+    print(io, "]*", step(f))
+    return nothing
 end
 
 """
