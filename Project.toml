@@ -11,8 +11,10 @@ ChainRulesCore = "1"
 julia = "^1.0"
 
 [extras]
+ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Test", "Unitful"]
+test = ["ChainRulesTestUtils", "Random", "Test", "Unitful"]
