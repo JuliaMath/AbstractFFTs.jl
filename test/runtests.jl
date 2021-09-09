@@ -100,23 +100,23 @@ end
 end
 
 @testset "Shift functions" begin
-    @test AbstractFFTs.fftshift([1 2 3]) == [3 1 2]
-    @test AbstractFFTs.fftshift([1, 2, 3]) == [3, 1, 2]
-    @test AbstractFFTs.fftshift([1 2 3; 4 5 6]) == [6 4 5; 3 1 2]
+    @test @inferred(AbstractFFTs.fftshift([1 2 3])) == [3 1 2]
+    @test @inferred(AbstractFFTs.fftshift([1, 2, 3])) == [3, 1, 2]
+    @test @inferred(AbstractFFTs.fftshift([1 2 3; 4 5 6])) == [6 4 5; 3 1 2]
 
-    @test AbstractFFTs.fftshift([1 2 3; 4 5 6], 1) == [4 5 6; 1 2 3]
-    @test AbstractFFTs.fftshift([1 2 3; 4 5 6], ()) == [1 2 3; 4 5 6]
-    @test AbstractFFTs.fftshift([1 2 3; 4 5 6], (1,2)) == [6 4 5; 3 1 2]
-    @test AbstractFFTs.fftshift([1 2 3; 4 5 6], 1:2) == [6 4 5; 3 1 2]
+    @test @inferred(AbstractFFTs.fftshift([1 2 3; 4 5 6], 1)) == [4 5 6; 1 2 3]
+    @test @inferred(AbstractFFTs.fftshift([1 2 3; 4 5 6], ())) == [1 2 3; 4 5 6]
+    @test @inferred(AbstractFFTs.fftshift([1 2 3; 4 5 6], (1,2))) == [6 4 5; 3 1 2]
+    @test @inferred(AbstractFFTs.fftshift([1 2 3; 4 5 6], 1:2)) == [6 4 5; 3 1 2]
 
-    @test AbstractFFTs.ifftshift([1 2 3]) == [2 3 1]
-    @test AbstractFFTs.ifftshift([1, 2, 3]) == [2, 3, 1]
-    @test AbstractFFTs.ifftshift([1 2 3; 4 5 6]) == [5 6 4; 2 3 1]
+    @test @inferred(AbstractFFTs.ifftshift([1 2 3])) == [2 3 1]
+    @test @inferred(AbstractFFTs.ifftshift([1, 2, 3])) == [2, 3, 1]
+    @test @inferred(AbstractFFTs.ifftshift([1 2 3; 4 5 6])) == [5 6 4; 2 3 1]
 
-    @test AbstractFFTs.ifftshift([1 2 3; 4 5 6], 1) == [4 5 6; 1 2 3]
-    @test AbstractFFTs.ifftshift([1 2 3; 4 5 6], ()) == [1 2 3; 4 5 6]
-    @test AbstractFFTs.ifftshift([1 2 3; 4 5 6], (1,2)) == [5 6 4; 2 3 1]
-    @test AbstractFFTs.ifftshift([1 2 3; 4 5 6], 1:2) == [5 6 4; 2 3 1]
+    @test @inferred(AbstractFFTs.ifftshift([1 2 3; 4 5 6], 1)) == [4 5 6; 1 2 3]
+    @test @inferred(AbstractFFTs.ifftshift([1 2 3; 4 5 6], ())) == [1 2 3; 4 5 6]
+    @test @inferred(AbstractFFTs.ifftshift([1 2 3; 4 5 6], (1,2))) == [5 6 4; 2 3 1]
+    @test @inferred(AbstractFFTs.ifftshift([1 2 3; 4 5 6], 1:2)) == [5 6 4; 2 3 1]
 end
 
 @testset "FFT Frequencies" begin
@@ -183,8 +183,8 @@ end
                 test_frule(AbstractFFTs.fftshift, x, dims)
                 test_rrule(AbstractFFTs.fftshift, x, dims)
 
-                test_frule(AbstractFFTs.fftshift, x, dims)
-                test_rrule(AbstractFFTs.fftshift, x, dims)
+                test_frule(AbstractFFTs.ifftshift, x, dims)
+                test_rrule(AbstractFFTs.ifftshift, x, dims)
             end
         end
     end

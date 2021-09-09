@@ -360,7 +360,7 @@ If `dim` is not given then the signal is shifted along each dimension.
 fftshift
 
 function fftshift(x, dim = 1:ndims(x))
-    s = ntuple(d -> d in dim ? div(size(x,d),2) : 0, ndims(x))
+    s = ntuple(d -> d in dim ? div(size(x,d),2) : 0, Val(ndims(x)))
     circshift(x, s)
 end
 
@@ -380,7 +380,7 @@ If `dim` is not given then the signal is shifted along each dimension.
 ifftshift
 
 function ifftshift(x, dim = 1:ndims(x))
-    s = ntuple(d -> d in dim ? -div(size(x,d),2) : 0, ndims(x))
+    s = ntuple(d -> d in dim ? -div(size(x,d),2) : 0, Val(ndims(x)))
     circshift(x, s)
 end
 
