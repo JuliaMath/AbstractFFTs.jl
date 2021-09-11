@@ -180,11 +180,16 @@ end
             for dims in ((), 1, 2, (1,2), 1:2)
                 any(d > ndims(x) for d in dims) && continue
 
+                # type inference checks of `rrule` fail on old Julia versions
+                # for higher-dimensional arrays:
+                # https://github.com/JuliaMath/AbstractFFTs.jl/pull/58#issuecomment-916530016
+                check_inferred = ndims(x) < 3 || VERSION >= v"1.6"
+
                 test_frule(AbstractFFTs.fftshift, x, dims)
-                test_rrule(AbstractFFTs.fftshift, x, dims)
+                test_rrule(AbstractFFTs.fftshift, x, dims; check_inferred=check_inferred)
 
                 test_frule(AbstractFFTs.ifftshift, x, dims)
-                test_rrule(AbstractFFTs.ifftshift, x, dims)
+                test_rrule(AbstractFFTs.ifftshift, x, dims; check_inferred=check_inferred)
             end
         end
     end
