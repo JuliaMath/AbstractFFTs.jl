@@ -256,7 +256,7 @@ summary(p::ScaledPlan) = string(p.scale, " * ", summary(p.p))
 *(p::Plan, I::UniformScaling) = ScaledPlan(p, I.λ)
 
 # Normalization for ifft, given unscaled bfft, is 1/prod(dimensions)
-normalization(::Type{T}, sz, region) where T = one(T) / Int(prod([sz...][[region...]]))::Int
+normalization(::Type{T}, sz, region) where T = one(T) / Int(prod(sz[r] for r in region))::Int
 normalization(X, region) = normalization(real(eltype(X)), size(X), region)
 
 plan_ifft(x::AbstractArray, region; kws...) =
@@ -360,7 +360,7 @@ If `dim` is not given then the signal is shifted along each dimension.
 fftshift
 
 function fftshift(x, dim = 1:ndims(x))
-    s = ntuple(d -> d in dim ? div(size(x,d),2) : 0, ndims(x))
+    s = ntuple(d -> d in dim ? div(size(x,d),2) : 0, Val(ndims(x)))
     circshift(x, s)
 end
 
@@ -380,7 +380,7 @@ If `dim` is not given then the signal is shifted along each dimension.
 ifftshift
 
 function ifftshift(x, dim = 1:ndims(x))
-    s = ntuple(d -> d in dim ? -div(size(x,d),2) : 0, ndims(x))
+    s = ntuple(d -> d in dim ? -div(size(x,d),2) : 0, Val(ndims(x)))
     circshift(x, s)
 end
 
