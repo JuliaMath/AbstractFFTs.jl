@@ -176,7 +176,7 @@ end
     # normalization should be inferable even if region is only inferred as ::Any,
     # need to wrap in another function to test this (note that p.region::Any for
     # p::TestPlan)
-    f9(p::Plan{T}, sz) where {T} = AbstractFFTs.normalization(real(T), sz, region(p))
+    f9(p::Plan{T}, sz) where {T} = AbstractFFTs.normalization(real(T), sz, AbstractFFTs.region(p))
     @test @inferred(f9(plan_fft(zeros(10), 1), 10)) == 1/10
 end
 
