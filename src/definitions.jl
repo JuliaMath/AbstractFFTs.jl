@@ -365,6 +365,17 @@ function fftshift(x, dim = 1:ndims(x))
 end
 
 """
+	fftshift!(dest, src, [dim])
+
+Nonallocating version of [`fftshift`](@ref). Stores the result of the shift of the `src` array into the `dest` array.
+"""
+function fftshift!(dest, src, dim = 1:ndims(src))
+	@assert size(dest)==size(src)
+    s = ntuple(d -> d in dim ? div(size(dest,d),2) : 0, Val(ndims(dest)))
+    circshift!(dest, src, s)
+end
+
+"""
     ifftshift(x, [dim])
 
 Circular-shift along the given dimension of a periodic signal `x` centered at
@@ -382,6 +393,17 @@ ifftshift
 function ifftshift(x, dim = 1:ndims(x))
     s = ntuple(d -> d in dim ? -div(size(x,d),2) : 0, Val(ndims(x)))
     circshift(x, s)
+end
+
+"""
+	ifftshift!(dest, src, [dim])
+
+Nonallocating version of [`ifftshift`](@ref). Stores the result of the shift of the `src` array into the `dest array`.
+"""
+function ifftshift!(dest, src, dim = 1:ndims(src))
+	@assert size(dest)==size(src)
+    s = ntuple(d -> d in dim ? -div(size(src,d),2) : 0, Val(ndims(src)))
+    circshift!(dest, src, s)
 end
 
 ##############################################################################
