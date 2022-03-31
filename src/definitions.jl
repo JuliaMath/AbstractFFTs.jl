@@ -345,12 +345,11 @@ plan_irfft
 ##############################################################################
 
 """
-	fftshift!(dest, src, [dim])
+    fftshift!(dest, src, [dim])
 
 Nonallocating version of [`fftshift`](@ref). Stores the result of the shift of the `src` array into the `dest` array.
 """
 function fftshift!(dest, src, dim = 1:ndims(src))
-	@assert size(dest)==size(src)
     s = ntuple(d -> d in dim ? div(size(dest,d),2) : 0, Val(ndims(dest)))
     circshift!(dest, src, s)
 end
@@ -372,18 +371,14 @@ The output of `fftshift` is allocated. If one desires to store the output in a p
 """
 fftshift
 
-function fftshift(x, dim = 1:ndims(x))
-	dest = similar(x)
-	fftshift!(dest, x, dim)
-end
+fftshift(x, dim = 1:ndims(x)) = fftshift!(similar(x), x, dim)
 
 """
-	ifftshift!(dest, src, [dim])
+    ifftshift!(dest, src, [dim])
 
 Nonallocating version of [`ifftshift`](@ref). Stores the result of the shift of the `src` array into the `dest` array.
 """
 function ifftshift!(dest, src, dim = 1:ndims(src))
-	@assert size(dest)==size(src)
     s = ntuple(d -> d in dim ? -div(size(src,d),2) : 0, Val(ndims(src)))
     circshift!(dest, src, s)
 end
@@ -405,10 +400,7 @@ The output of `ifftshift` is allocated. If one desires to store the output in a 
 """
 ifftshift
 
-function ifftshift(x, dim = 1:ndims(x))
-	dest = similar(x)
-	ifftshift!(dest, x, dim)
-end
+ifftshift(x, dim = 1:ndims(x)) = ifftshift!(similar(x), x, dim)
 
 ##############################################################################
 
