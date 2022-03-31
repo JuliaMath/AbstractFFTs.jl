@@ -345,6 +345,17 @@ plan_irfft
 ##############################################################################
 
 """
+	fftshift!(dest, src, [dim])
+
+Nonallocating version of [`fftshift`](@ref). Stores the result of the shift of the `src` array into the `dest` array.
+"""
+function fftshift!(dest, src, dim = 1:ndims(src))
+	@assert size(dest)==size(src)
+    s = ntuple(d -> d in dim ? div(size(dest,d),2) : 0, Val(ndims(dest)))
+    circshift!(dest, src, s)
+end
+
+"""
     fftshift(x, [dim])
 
 Circular-shift along the given dimension of a periodic signal `x` centered at
@@ -356,22 +367,24 @@ swapping the first and second halves, so `fftshift` and [`ifftshift`](@ref) are
 the same.
 
 If `dim` is not given then the signal is shifted along each dimension.
+
+The output of `fftshift` is allocated. If one desires to store the output in a preallocated array, use [`fftshift!`](@ref) instead.
 """
 fftshift
 
 function fftshift(x, dim = 1:ndims(x))
-    s = ntuple(d -> d in dim ? div(size(x,d),2) : 0, Val(ndims(x)))
-    circshift(x, s)
+	dest = similar(x)
+	fftshift!(dest, x, dim)
 end
 
 """
-	fftshift!(dest, src, [dim])
+	ifftshift!(dest, src, [dim])
 
-Nonallocating version of [`fftshift`](@ref). Stores the result of the shift of the `src` array into the `dest` array.
+Nonallocating version of [`ifftshift`](@ref). Stores the result of the shift of the `src` array into the `dest` array.
 """
-function fftshift!(dest, src, dim = 1:ndims(src))
+function ifftshift!(dest, src, dim = 1:ndims(src))
 	@assert size(dest)==size(src)
-    s = ntuple(d -> d in dim ? div(size(dest,d),2) : 0, Val(ndims(dest)))
+    s = ntuple(d -> d in dim ? -div(size(src,d),2) : 0, Val(ndims(src)))
     circshift!(dest, src, s)
 end
 
@@ -387,23 +400,14 @@ swapping the first and second halves, so [`fftshift`](@ref) and `ifftshift` are
 the same.
 
 If `dim` is not given then the signal is shifted along each dimension.
+
+The output of `ifftshift` is allocated. If one desires to store the output in a preallocated array, use [`ifftshift!`](@ref) instead.
 """
 ifftshift
 
 function ifftshift(x, dim = 1:ndims(x))
-    s = ntuple(d -> d in dim ? -div(size(x,d),2) : 0, Val(ndims(x)))
-    circshift(x, s)
-end
-
-"""
-	ifftshift!(dest, src, [dim])
-
-Nonallocating version of [`ifftshift`](@ref). Stores the result of the shift of the `src` array into the `dest array`.
-"""
-function ifftshift!(dest, src, dim = 1:ndims(src))
-	@assert size(dest)==size(src)
-    s = ntuple(d -> d in dim ? -div(size(src,d),2) : 0, Val(ndims(src)))
-    circshift!(dest, src, s)
+	dest = similar(x)
+	ifftshift!(dest, x, dim)
 end
 
 ##############################################################################
