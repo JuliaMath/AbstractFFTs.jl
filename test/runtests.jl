@@ -109,20 +109,37 @@ end
     @test @inferred(AbstractFFTs.fftshift([1 2 3])) == [3 1 2]
     @test @inferred(AbstractFFTs.fftshift([1, 2, 3])) == [3, 1, 2]
     @test @inferred(AbstractFFTs.fftshift([1 2 3; 4 5 6])) == [6 4 5; 3 1 2]
+    a = [0 0 0]
+    b = [0, 0, 0]
+    c = [0 0 0; 0 0 0]
+    @test (AbstractFFTs.fftshift!(a, [1 2 3]); a == [3 1 2])
+    @test (AbstractFFTs.fftshift!(b, [1, 2, 3]); b == [3, 1, 2])
+    @test (AbstractFFTs.fftshift!(c, [1 2 3; 4 5 6]); c == [6 4 5; 3 1 2])
 
     @test @inferred(AbstractFFTs.fftshift([1 2 3; 4 5 6], 1)) == [4 5 6; 1 2 3]
     @test @inferred(AbstractFFTs.fftshift([1 2 3; 4 5 6], ())) == [1 2 3; 4 5 6]
     @test @inferred(AbstractFFTs.fftshift([1 2 3; 4 5 6], (1,2))) == [6 4 5; 3 1 2]
     @test @inferred(AbstractFFTs.fftshift([1 2 3; 4 5 6], 1:2)) == [6 4 5; 3 1 2]
+    @test (AbstractFFTs.fftshift!(c, [1 2 3; 4 5 6], 1); c == [4 5 6; 1 2 3])
+    @test (AbstractFFTs.fftshift!(c, [1 2 3; 4 5 6], ()); c == [1 2 3; 4 5 6])
+    @test (AbstractFFTs.fftshift!(c, [1 2 3; 4 5 6], (1,2)); c == [6 4 5; 3 1 2])
+    @test (AbstractFFTs.fftshift!(c, [1 2 3; 4 5 6], 1:2); c == [6 4 5; 3 1 2])
 
     @test @inferred(AbstractFFTs.ifftshift([1 2 3])) == [2 3 1]
     @test @inferred(AbstractFFTs.ifftshift([1, 2, 3])) == [2, 3, 1]
     @test @inferred(AbstractFFTs.ifftshift([1 2 3; 4 5 6])) == [5 6 4; 2 3 1]
+    @test (AbstractFFTs.ifftshift!(a, [1 2 3]); a == [2 3 1])
+    @test (AbstractFFTs.ifftshift!(b, [1, 2, 3]); b == [2, 3, 1])
+    @test (AbstractFFTs.ifftshift!(c, [1 2 3; 4 5 6]); c == [5 6 4; 2 3 1])
 
     @test @inferred(AbstractFFTs.ifftshift([1 2 3; 4 5 6], 1)) == [4 5 6; 1 2 3]
     @test @inferred(AbstractFFTs.ifftshift([1 2 3; 4 5 6], ())) == [1 2 3; 4 5 6]
     @test @inferred(AbstractFFTs.ifftshift([1 2 3; 4 5 6], (1,2))) == [5 6 4; 2 3 1]
     @test @inferred(AbstractFFTs.ifftshift([1 2 3; 4 5 6], 1:2)) == [5 6 4; 2 3 1]
+    @test (AbstractFFTs.ifftshift!(c, [1 2 3; 4 5 6], 1); c == [4 5 6; 1 2 3])
+    @test (AbstractFFTs.ifftshift!(c, [1 2 3; 4 5 6], ()); c == [1 2 3; 4 5 6])
+    @test (AbstractFFTs.ifftshift!(c, [1 2 3; 4 5 6], (1,2)); c == [5 6 4; 2 3 1])
+    @test (AbstractFFTs.ifftshift!(c, [1 2 3; 4 5 6], 1:2); c == [5 6 4; 2 3 1])
 end
 
 @testset "FFT Frequencies" begin
