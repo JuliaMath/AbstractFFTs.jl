@@ -1,18 +1,18 @@
-mutable struct TestPlan{T,N} <: Plan{T}
-    region
+mutable struct TestPlan{T,N,G} <: Plan{T}
+    region::G
     sz::NTuple{N,Int}
     pinv::Plan{T}
-    function TestPlan{T}(region, sz::NTuple{N,Int}) where {T,N}
-        return new{T,N}(region, sz)
+    function TestPlan{T}(region::G, sz::NTuple{N,Int}) where {T,N,G}
+        return new{T,N,G}(region, sz)
     end
 end
 
-mutable struct InverseTestPlan{T,N} <: Plan{T}
-    region
+mutable struct InverseTestPlan{T,N,G} <: Plan{T}
+    region::G
     sz::NTuple{N,Int}
     pinv::Plan{T}
-    function InverseTestPlan{T}(region, sz::NTuple{N,Int}) where {T,N}
-        return new{T,N}(region, sz)
+    function InverseTestPlan{T}(region::G, sz::NTuple{N,Int}) where {T,N,G}
+        return new{T,N,G}(region, sz)
     end
 end
 
@@ -20,6 +20,9 @@ Base.size(p::TestPlan) = p.sz
 Base.ndims(::TestPlan{T,N}) where {T,N} = N
 Base.size(p::InverseTestPlan) = p.sz
 Base.ndims(::InverseTestPlan{T,N}) where {T,N} = N
+
+AbstractFFTs.ProjectionStyle(::TestPlan) = AbstractFFTs.NoProjectionStyle()
+AbstractFFTs.ProjectionStyle(::InverseTestPlan) = AbstractFFTs.NoProjectionStyle()
 
 function AbstractFFTs.plan_fft(x::AbstractArray{T}, region; kwargs...) where {T}
     return TestPlan{T}(region, size(x))
@@ -89,23 +92,27 @@ end
 Base.:*(p::TestPlan, x::AbstractArray) = mul!(similar(x, complex(float(eltype(x)))), p, x)
 Base.:*(p::InverseTestPlan, x::AbstractArray) = mul!(similar(x, complex(float(eltype(x)))), p, x)
 
-mutable struct TestRPlan{T,N} <: Plan{T}
-    region
+mutable struct TestRPlan{T,N,G} <: Plan{T}
+    region::G
     sz::NTuple{N,Int}
     pinv::Plan{T}
-    TestRPlan{T}(region, sz::NTuple{N,Int}) where {T,N} = new{T,N}(region, sz)
+    TestRPlan{T}(region::G, sz::NTuple{N,Int}) where {T,N,G} = new{T,N,G}(region, sz)
 end
 
-mutable struct InverseTestRPlan{T,N} <: Plan{T}
+mutable struct InverseTestRPlan{T,N,G} <: Plan{T}
     d::Int
-    region
+    region::G
     sz::NTuple{N,Int}
     pinv::Plan{T}
-    function InverseTestRPlan{T}(d::Int, region, sz::NTuple{N,Int}) where {T,N}
+    function InverseTestRPlan{T}(d::Int, region::G, sz::NTuple{N,Int}) where {T,N,G}
         sz[first(region)::Int] == d ÷ 2 + 1 || error("incompatible dimensions")
-        return new{T,N}(d, region, sz)
+        return new{T,N,G}(d, region, sz)
     end
 end
+
+AbstractFFTs.ProjectionStyle(::TestRPlan) = AbstractFFTs.RealProjectionStyle()
+AbstractFFTs.ProjectionStyle(::InverseTestRPlan) = AbstractFFTs.RealInverseProjectionStyle()
+AbstractFFTs.irfft_dim(p::InverseTestRPlan) = p.d
 
 function AbstractFFTs.plan_rfft(x::AbstractArray{T}, region; kwargs...) where {T}
     return TestRPlan{T}(region, size(x))

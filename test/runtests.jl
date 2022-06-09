@@ -3,6 +3,7 @@
 using AbstractFFTs
 using AbstractFFTs: Plan
 using ChainRulesTestUtils
+using ChainRulesCore: NoTangent
 
 using LinearAlgebra
 using Random
@@ -197,6 +198,79 @@ end
     @test @inferred(f9(plan_fft(zeros(10), 1), 10)) == 1/10
 end
 
+@testset "output size" begin
+    @testset "complex fft output size" begin
+        for x in (randn(3), randn(3, 4), randn(3, 4, 5))
+            N = ndims(x)
+            y = randn(size(x))
+            for dims in unique((1, 1:N, N))
+                P = plan_fft(x, dims)
+                @test AbstractFFTs.output_size(P) == size(x)
+                @test AbstractFFTs.output_size(P') == size(x)
+                Pinv = plan_ifft(x)
+                @test AbstractFFTs.output_size(Pinv) == size(x)
+                @test AbstractFFTs.output_size(Pinv') == size(x)
+            end
+        end
+    end
+    @testset "real fft output size" begin
+        for x in (randn(3), randn(4), randn(3, 4), randn(3, 4, 5)) # test odd and even lengths
+            N = ndims(x)
+            for dims in unique((1, 1:N, N))
+                P = plan_rfft(x, dims)        
+                Px_sz = size(P * x)
+                @test AbstractFFTs.output_size(P) == Px_sz 
+                @test AbstractFFTs.output_size(P') == size(x) 
+                y = randn(Px_sz) .+ randn(Px_sz) * im
+                Pinv = plan_irfft(y, size(x)[first(dims)], dims)
+                @test AbstractFFTs.output_size(Pinv) == size(Pinv * y)
+                @test AbstractFFTs.output_size(Pinv') == size(y)
+            end
+        end
+    end
+end
+
+@testset "adjoint" begin
+    @testset "complex fft adjoint" begin
+        for x in (randn(3), randn(3, 4), randn(3, 4, 5))
+            N = ndims(x)
+            y = randn(size(x))
+            for dims in unique((1, 1:N, N))
+                P = plan_fft(x, dims)
+                @test (P')' * x == P * x # test adjoint of adjoint
+                @test size(P') == AbstractFFTs.output_size(P) # test size of adjoint 
+                @test dot(y, P * x) ≈ dot(P' * y, x) # test validity of adjoint
+                @test_broken dot(y, P \ x) ≈ dot(P' \ y, x)
+                Pinv = plan_ifft(y)
+                @test (Pinv')' * y == Pinv * y 
+                @test size(Pinv') == AbstractFFTs.output_size(Pinv) 
+                @test dot(x, Pinv * y) ≈ dot(Pinv' * x, y)
+                @test_broken dot(x, Pinv \ y) ≈ dot(Pinv' \ x, y)
+            end
+        end
+    end
+    @testset "real fft adjoint" begin
+        for x in (randn(3), randn(4), randn(3, 4), randn(3, 4, 5)) # test odd and even lengths
+            N = ndims(x)
+            for dims in unique((1, 1:N, N))
+                P = plan_rfft(x, dims)        
+                y_real = randn(size(P * x))
+                y_imag = randn(size(P * x))
+                y = y_real .+ y_imag .* im 
+                @test (P')' * x == P * x
+                @test size(P') == AbstractFFTs.output_size(P) 
+                @test dot(y_real, real.(P * x)) + dot(y_imag, imag.(P * x)) ≈ dot(P' * y, x)
+                @test_broken dot(y_real, real.(P \ x)) + dot(y_imag, imag.(P \ x)) ≈ dot(P' * y, x)
+                Pinv = plan_irfft(y, size(x)[first(dims)], dims)
+                @test (Pinv')' * y == Pinv * y
+                @test size(Pinv') == AbstractFFTs.output_size(Pinv) 
+                @test dot(x, Pinv * y) ≈ dot(y_real, real.(Pinv' * x)) + dot(y_imag, imag.(Pinv' * x))
+                @test_broken dot(x, Pinv \ y) ≈ dot(y_real, real.(Pinv' \ x)) + dot(y_imag, imag.(Pinv' \ x))
+            end
+        end
+    end
+end
+
 @testset "ChainRules" begin
     @testset "shift functions" begin
         for x in (randn(3), randn(3, 4), randn(3, 4, 5))
@@ -218,26 +292,43 @@ end
     end
 
     @testset "fft" begin
-        for x in (randn(3), randn(3, 4), randn(3, 4, 5))
+        for x in (randn(2), randn(2, 3), randn(3, 4, 5))
             N = ndims(x)
             complex_x = complex.(x)
             for dims in unique((1, 1:N, N))
+                # fft, ifft, bfft
                 for f in (fft, ifft, bfft)
                     test_frule(f, x, dims)
                     test_rrule(f, x, dims)
                     test_frule(f, complex_x, dims)
                     test_rrule(f, complex_x, dims)
                 end
+                for pf in (plan_fft, plan_ifft, plan_bfft) 
+                    test_frule(*, pf(x, dims) ⊢ NoTangent(), x)
+                    test_rrule(*, pf(x, dims) ⊢ NoTangent(), x)
+                    test_frule(*, pf(complex_x, dims) ⊢ NoTangent(), complex_x)
+                    test_rrule(*, pf(complex_x, dims) ⊢ NoTangent(), complex_x)
+                end
 
+                # rfft 
                 test_frule(rfft, x, dims)
                 test_rrule(rfft, x, dims)
+                test_frule(*, plan_rfft(x, dims) ⊢ NoTangent(), x)
+                test_rrule(*, plan_rfft(x, dims) ⊢ NoTangent(), x)
 
+                # irfft, brfft
                 for f in (irfft, brfft)
                     for d in (2 * size(x, first(dims)) - 1, 2 * size(x, first(dims)) - 2)
                         test_frule(f, x, d, dims)
                         test_rrule(f, x, d, dims)
                         test_frule(f, complex_x, d, dims)
                         test_rrule(f, complex_x, d, dims)
+                    end
+                end
+                for pf in (plan_irfft, plan_brfft) 
+                    for d in (2 * size(x, first(dims)) - 1, 2 * size(x, first(dims)) - 2)
+                        test_frule(*, pf(complex_x, d, dims) ⊢ NoTangent(), complex_x)
+                        test_rrule(*, pf(complex_x, d, dims) ⊢ NoTangent(), complex_x)
                     end
                 end
             end
