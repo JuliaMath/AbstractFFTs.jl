@@ -12,6 +12,7 @@ eltype(::Type{<:Plan{T}}) where {T} = T
 
 # size(p) should return the size of the input array for p
 size(p::Plan, d) = size(p)[d]
+output_size(p::Plan, d) = output_size(p)[d]
 ndims(p::Plan) = length(size(p))
 length(p::Plan) = prod(size(p))::Int
 
@@ -255,6 +256,7 @@ ScaledPlan(p::Plan{T}, scale::Number) where {T} = ScaledPlan{T}(p, scale)
 ScaledPlan(p::ScaledPlan, α::Number) = ScaledPlan(p.p, p.scale * α)
 
 size(p::ScaledPlan) = size(p.p)
+output_size(p::ScaledPlan) = output_size(p.p)
 
 fftdims(p::ScaledPlan) = fftdims(p.p)
 
@@ -576,3 +578,67 @@ Pre-plan an optimized real-input unnormalized transform, similar to
 the same as for [`brfft`](@ref).
 """
 plan_brfft
+
+##############################################################################
+
+struct NoProjectionStyle end
+struct RealProjectionStyle end 
+struct RealInverseProjectionStyle end
+const ProjectionStyle = Union{NoProjectionStyle, RealProjectionStyle, RealInverseProjectionStyle}
+
+function irfft_dim end
+
+output_size(p::Plan) = _output_size(p, ProjectionStyle(p))
+_output_size(p::Plan, ::NoProjectionStyle) = size(p)
+_output_size(p::Plan, ::RealProjectionStyle) = rfft_output_size(size(p), region(p))
+_output_size(p::Plan, ::RealInverseProjectionStyle) = brfft_output_size(size(p), irfft_dim(p), region(p))
+
+mutable struct AdjointPlan{T,P} <: Plan{T}
+    p::P
+    pinv::Plan
+    AdjointPlan{T,P}(p) where {T,P} = new(p)
+end
+
+Base.adjoint(p::Plan{T}) where {T} = AdjointPlan{T, typeof(p)}(p)
+Base.adjoint(p::AdjointPlan{T}) where {T} = p.p
+# always have AdjointPlan inside ScaledPlan.
+Base.adjoint(p::ScaledPlan{T}) where {T} = ScaledPlan{T}(p.p', p.scale)
+
+size(p::AdjointPlan) = output_size(p.p)
+output_size(p::AdjointPlan) = size(p.p)
+
+Base.:*(p::AdjointPlan, x::AbstractArray) = _mul(p, x, ProjectionStyle(p.p))
+
+function _mul(p::AdjointPlan{T}, x::AbstractArray, ::NoProjectionStyle) where {T}
+    dims = region(p.p)
+    N = normalization(T, size(p.p), dims)
+    return 1/N * (p.p \ x)
+end
+
+function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealProjectionStyle) where {T}
+    dims = region(p.p)
+    N = normalization(T, size(p.p), dims)
+    halfdim = first(dims)
+    d = size(p.p, halfdim)
+    n = output_size(p.p, halfdim)
+    scale = reshape(
+        [(i == 1 || (i == n && 2 * (i - 1)) == d) ? 1 : 2 for i in 1:n],
+        ntuple(i -> i == first(dims) ? n : 1, Val(ndims(x)))
+    )
+    return 1/N * (p.p \ (x ./ scale))
+end
+
+function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealInverseProjectionStyle) where {T}
+    dims = region(p.p)
+    N = normalization(real(T), output_size(p.p), dims)
+    halfdim = first(dims)
+    n = size(p.p, halfdim)
+    d = output_size(p.p, halfdim)
+    scale = reshape(
+        [(i == 1 || (i == n && 2 * (i - 1)) == d) ? 1 : 2 for i in 1:n],
+        ntuple(i -> i == first(dims) ? n : 1, Val(ndims(x)))
+    )
+    return 1/N * scale .* (p.p \ x)
+end
+
+plan_inv(p::AdjointPlan) = AdjointPlan(plan_inv(p.p))
