@@ -150,3 +150,20 @@ function ChainRulesCore.rrule(::typeof(ifftshift), x::AbstractArray, dims)
     end
     return y, ifftshift_pullback
 end
+
+# plans
+function ChainRulesCore.frule((_, _, Δx), ::typeof(*), P::Plan, x::AbstractArray) 
+    y = P * x 
+    Δy = P * Δx
+    return y, Δy
+end
+function ChainRulesCore.rrule(::typeof(*), P::Plan, x::AbstractArray)
+    y = P * x
+    project_x = ChainRulesCore.ProjectTo(x)
+    Pt = P'
+    function mul_plan_pullback(ȳ)
+        x̄ = project_x(Pt * ȳ)
+        return ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(), x̄
+    end
+    return y, mul_plan_pullback
+end
