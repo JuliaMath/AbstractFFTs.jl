@@ -111,8 +111,7 @@ mutable struct InverseTestRPlan{T,N,G} <: Plan{T}
 end
 
 AbstractFFTs.ProjectionStyle(::TestRPlan) = AbstractFFTs.RealProjectionStyle()
-AbstractFFTs.ProjectionStyle(::InverseTestRPlan) = AbstractFFTs.RealInverseProjectionStyle()
-AbstractFFTs.irfft_dim(p::InverseTestRPlan) = p.d
+AbstractFFTs.ProjectionStyle(p::InverseTestRPlan) = AbstractFFTs.RealInverseProjectionStyle(p.d)
 
 function AbstractFFTs.plan_rfft(x::AbstractArray{T}, region; kwargs...) where {T}
     return TestRPlan{T}(region, size(x))

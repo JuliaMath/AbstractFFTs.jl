@@ -583,7 +583,9 @@ plan_brfft
 
 struct NoProjectionStyle end
 struct RealProjectionStyle end 
-struct RealInverseProjectionStyle end
+struct RealInverseProjectionStyle 
+    dim::Int
+end
 const ProjectionStyle = Union{NoProjectionStyle, RealProjectionStyle, RealInverseProjectionStyle}
 
 function irfft_dim end
@@ -591,7 +593,7 @@ function irfft_dim end
 output_size(p::Plan) = _output_size(p, ProjectionStyle(p))
 _output_size(p::Plan, ::NoProjectionStyle) = size(p)
 _output_size(p::Plan, ::RealProjectionStyle) = rfft_output_size(size(p), region(p))
-_output_size(p::Plan, ::RealInverseProjectionStyle) = brfft_output_size(size(p), irfft_dim(p), region(p))
+_output_size(p::Plan, s::RealInverseProjectionStyle) = brfft_output_size(size(p), s.dim, region(p))
 
 mutable struct AdjointPlan{T,P<:Plan} <: Plan{T}
     p::P
