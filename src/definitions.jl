@@ -593,16 +593,16 @@ _output_size(p::Plan, ::NoProjectionStyle) = size(p)
 _output_size(p::Plan, ::RealProjectionStyle) = rfft_output_size(size(p), region(p))
 _output_size(p::Plan, ::RealInverseProjectionStyle) = brfft_output_size(size(p), irfft_dim(p), region(p))
 
-mutable struct AdjointPlan{T,P} <: Plan{T}
+mutable struct AdjointPlan{T,P<:Plan} <: Plan{T}
     p::P
     pinv::Plan
     AdjointPlan{T,P}(p) where {T,P} = new(p)
 end
 
 Base.adjoint(p::Plan{T}) where {T} = AdjointPlan{T, typeof(p)}(p)
-Base.adjoint(p::AdjointPlan{T}) where {T} = p.p
+Base.adjoint(p::AdjointPlan) = p.p
 # always have AdjointPlan inside ScaledPlan.
-Base.adjoint(p::ScaledPlan{T}) where {T} = ScaledPlan{T}(p.p', p.scale)
+Base.adjoint(p::ScaledPlan) = ScaledPlan(p.p', p.scale)
 
 size(p::AdjointPlan) = output_size(p.p)
 output_size(p::AdjointPlan) = size(p.p)
@@ -612,7 +612,7 @@ Base.:*(p::AdjointPlan, x::AbstractArray) = _mul(p, x, ProjectionStyle(p.p))
 function _mul(p::AdjointPlan{T}, x::AbstractArray, ::NoProjectionStyle) where {T}
     dims = region(p.p)
     N = normalization(T, size(p.p), dims)
-    return 1/N * (p.p \ x)
+    return (p.p \ x) / N
 end
 
 function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealProjectionStyle) where {T}
@@ -622,10 +622,10 @@ function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealProjectionStyle) where 
     d = size(p.p, halfdim)
     n = output_size(p.p, halfdim)
     scale = reshape(
-        [(i == 1 || (i == n && 2 * (i - 1)) == d) ? 1 : 2 for i in 1:n],
-        ntuple(i -> i == first(dims) ? n : 1, Val(ndims(x)))
+        [(i == 1 || (i == n && 2 * (i - 1)) == d) ? N : 2 * N for i in 1:n],
+        ntuple(i -> i == halfdim ? n : 1, Val(ndims(x)))
     )
-    return 1/N * (p.p \ (x ./ scale))
+    return p.p \ (x ./ scale)
 end
 
 function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealInverseProjectionStyle) where {T}
@@ -636,9 +636,9 @@ function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealInverseProjectionStyle)
     d = output_size(p.p, halfdim)
     scale = reshape(
         [(i == 1 || (i == n && 2 * (i - 1)) == d) ? 1 : 2 for i in 1:n],
-        ntuple(i -> i == first(dims) ? n : 1, Val(ndims(x)))
+        ntuple(i -> i == halfdim ? n : 1, Val(ndims(x)))
     )
-    return 1/N * scale .* (p.p \ x)
+    return scale ./ N .* (p.p \ x)
 end
 
-plan_inv(p::AdjointPlan) = AdjointPlan(plan_inv(p.p))
+plan_inv(p::AdjointPlan) = adjoint(plan_inv(p.p))
