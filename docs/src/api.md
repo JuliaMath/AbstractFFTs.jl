@@ -19,6 +19,7 @@ AbstractFFTs.brfft
 AbstractFFTs.plan_rfft
 AbstractFFTs.plan_brfft
 AbstractFFTs.plan_irfft
+AbstractFFTs.fftdims
 AbstractFFTs.fftshift
 AbstractFFTs.fftshift!
 AbstractFFTs.ifftshift
