@@ -60,21 +60,21 @@ end
         @test eltype(P) === ComplexF64
         @test P * x ≈ fftw_fft
         @test P \ (P * x) ≈ x
-        @test AbstractFFTs.region(P) == dims
+        @test fftdims(P) == dims
 
         fftw_bfft = complex.(size(x, dims) .* x)
         @test AbstractFFTs.bfft(y, dims) ≈ fftw_bfft
         P = plan_bfft(x, dims)
         @test P * y ≈ fftw_bfft
         @test P \ (P * y) ≈ y
-        @test AbstractFFTs.region(P) == dims
+        @test fftdims(P) == dims
 
         fftw_ifft = complex.(x)
         @test AbstractFFTs.ifft(y, dims) ≈ fftw_ifft
         P = plan_ifft(x, dims)
         @test P * y ≈ fftw_ifft
         @test P \ (P * y) ≈ y
-        @test AbstractFFTs.region(P) == dims
+        @test fftdims(P) == dims
 
         # real FFT
         fftw_rfft = fftw_fft[
@@ -87,21 +87,21 @@ end
         @test eltype(P) === Int
         @test P * x ≈ fftw_rfft
         @test P \ (P * x) ≈ x
-        @test AbstractFFTs.region(P) == dims
+        @test fftdims(P) == dims
 
         fftw_brfft = complex.(size(x, dims) .* x)
         @test AbstractFFTs.brfft(ry, size(x, dims), dims) ≈ fftw_brfft
         P = plan_brfft(ry, size(x, dims), dims)
         @test P * ry ≈ fftw_brfft
         @test P \ (P * ry) ≈ ry
-        @test AbstractFFTs.region(P) == dims
-        
+        @test fftdims(P) == dims
+
         fftw_irfft = complex.(x)
         @test AbstractFFTs.irfft(ry, size(x, dims), dims) ≈ fftw_irfft
         P = plan_irfft(ry, size(x, dims), dims)
         @test P * ry ≈ fftw_irfft
         @test P \ (P * ry) ≈ ry
-        @test AbstractFFTs.region(P) == dims
+        @test fftdims(P) == dims
     end
 end
 
@@ -193,7 +193,7 @@ end
     # normalization should be inferable even if region is only inferred as ::Any,
     # need to wrap in another function to test this (note that p.region::Any for
     # p::TestPlan)
-    f9(p::Plan{T}, sz) where {T} = AbstractFFTs.normalization(real(T), sz, AbstractFFTs.region(p))
+    f9(p::Plan{T}, sz) where {T} = AbstractFFTs.normalization(real(T), sz, fftdims(p))
     @test @inferred(f9(plan_fft(zeros(10), 1), 10)) == 1/10
 end
 

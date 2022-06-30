@@ -16,16 +16,16 @@ ndims(p::Plan) = length(size(p))
 length(p::Plan) = prod(size(p))::Int
 
 """
-    region(p::Plan)
+    fftdims(p::Plan)
 
 Return an iterable of the dimensions that are transformed by the FFT plan `p`.
 
 # Implementation
 
-The default definition of `region` returns `p.region`.
-Hence this method should be implemented only for types of `Plan`s that do not store the transformed region in a field of name `region`.
+For legacy reasons, the default definition of `fftdims` returns `p.region`.
+Hence this method should be implemented only for `Plan` subtypes that do not store the transformed dimensions in a field named `region`.
 """
-region(p::Plan) = p.region
+fftdims(p::Plan) = p.region
 
 fftfloat(x) = _fftfloat(float(x))
 _fftfloat(::Type{T}) where {T<:BlasReal} = T
@@ -255,7 +255,7 @@ ScaledPlan(p::ScaledPlan, α::Number) = ScaledPlan(p.p, p.scale * α)
 
 size(p::ScaledPlan) = size(p.p)
 
-region(p::ScaledPlan) = region(p.p)
+fftdims(p::ScaledPlan) = fftdims(p.p)
 
 show(io::IO, p::ScaledPlan) = print(io, p.scale, " * ", p.p)
 summary(p::ScaledPlan) = string(p.scale, " * ", summary(p.p))
