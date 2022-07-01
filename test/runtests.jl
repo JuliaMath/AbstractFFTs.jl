@@ -240,12 +240,12 @@ end
                 @test (P')' * x == P * x # test adjoint of adjoint
                 @test size(P') == AbstractFFTs.output_size(P) # test size of adjoint 
                 @test dot(y, P * x) ≈ dot(P' * y, x) # test validity of adjoint
-                @test_broken dot(y, P \ x) ≈ dot(P' \ y, x)
+                @test dot(y, P \ x) ≈ dot(P' \ y, x)
                 Pinv = plan_ifft(y)
                 @test (Pinv')' * y == Pinv * y 
                 @test size(Pinv') == AbstractFFTs.output_size(Pinv) 
                 @test dot(x, Pinv * y) ≈ dot(Pinv' * x, y)
-                @test_broken dot(x, Pinv \ y) ≈ dot(Pinv' \ x, y)
+                @test dot(x, Pinv \ y) ≈ dot(Pinv' \ x, y)
             end
         end
     end
@@ -260,12 +260,12 @@ end
                 @test (P')' * x == P * x
                 @test size(P') == AbstractFFTs.output_size(P) 
                 @test dot(y_real, real.(P * x)) + dot(y_imag, imag.(P * x)) ≈ dot(P' * y, x)
-                @test_broken dot(y_real, real.(P \ x)) + dot(y_imag, imag.(P \ x)) ≈ dot(P' * y, x)
+                @test dot(y_real, real.(P' \ x)) + dot(y_imag, imag.(P' \ x)) ≈ dot(P \ y, x)
                 Pinv = plan_irfft(y, size(x)[first(dims)], dims)
                 @test (Pinv')' * y == Pinv * y
                 @test size(Pinv') == AbstractFFTs.output_size(Pinv) 
                 @test dot(x, Pinv * y) ≈ dot(y_real, real.(Pinv' * x)) + dot(y_imag, imag.(Pinv' * x))
-                @test_broken dot(x, Pinv \ y) ≈ dot(y_real, real.(Pinv' \ x)) + dot(y_imag, imag.(Pinv' \ x))
+                @test dot(x, Pinv' \ y) ≈ dot(y_real, real.(Pinv \ x)) + dot(y_imag, imag.(Pinv \ x))
             end
         end
     end
