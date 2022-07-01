@@ -592,8 +592,8 @@ function irfft_dim end
 
 output_size(p::Plan) = _output_size(p, ProjectionStyle(p))
 _output_size(p::Plan, ::NoProjectionStyle) = size(p)
-_output_size(p::Plan, ::RealProjectionStyle) = rfft_output_size(size(p), region(p))
-_output_size(p::Plan, s::RealInverseProjectionStyle) = brfft_output_size(size(p), s.dim, region(p))
+_output_size(p::Plan, ::RealProjectionStyle) = rfft_output_size(size(p), fftdims(p))
+_output_size(p::Plan, s::RealInverseProjectionStyle) = brfft_output_size(size(p), s.dim, fftdims(p))
 
 mutable struct AdjointPlan{T,P<:Plan} <: Plan{T}
     p::P
@@ -612,13 +612,13 @@ output_size(p::AdjointPlan) = size(p.p)
 Base.:*(p::AdjointPlan, x::AbstractArray) = _mul(p, x, ProjectionStyle(p.p))
 
 function _mul(p::AdjointPlan{T}, x::AbstractArray, ::NoProjectionStyle) where {T}
-    dims = region(p.p)
+    dims = fftdims(p.p)
     N = normalization(T, size(p.p), dims)
     return (p.p \ x) / N
 end
 
 function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealProjectionStyle) where {T}
-    dims = region(p.p)
+    dims = fftdims(p.p)
     N = normalization(T, size(p.p), dims)
     halfdim = first(dims)
     d = size(p.p, halfdim)
@@ -631,7 +631,7 @@ function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealProjectionStyle) where 
 end
 
 function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealInverseProjectionStyle) where {T}
-    dims = region(p.p)
+    dims = fftdims(p.p)
     N = normalization(real(T), output_size(p.p), dims)
     halfdim = first(dims)
     n = size(p.p, halfdim)
