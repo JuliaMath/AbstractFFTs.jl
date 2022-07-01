@@ -644,3 +644,6 @@ function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealInverseProjectionStyle)
 end
 
 plan_inv(p::AdjointPlan) = adjoint(plan_inv(p.p))
+function LinearAlgebra.mul!(y::AbstractArray, p::AdjointPlan, x::AbstractArray)
+    throw(MethodError(LinearAlgebra.mul!, "mul! is not supported for adjoint plans"))
+end

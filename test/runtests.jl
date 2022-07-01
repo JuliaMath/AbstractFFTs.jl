@@ -246,6 +246,7 @@ end
                 @test size(Pinv') == AbstractFFTs.output_size(Pinv) 
                 @test dot(x, Pinv * y) ≈ dot(Pinv' * x, y)
                 @test dot(x, Pinv \ y) ≈ dot(Pinv' \ x, y)
+                @test_throws MethodError mul!(x, P', y)
             end
         end
     end
