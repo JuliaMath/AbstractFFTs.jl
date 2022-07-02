@@ -278,7 +278,7 @@ plan_ifft(x::AbstractArray, region; kws...) =
 plan_ifft!(x::AbstractArray, region; kws...) =
     ScaledPlan(plan_bfft!(x, region; kws...), normalization(x, region))
 
-plan_inv(p::ScaledPlan) = ScaledPlan(plan_inv(p.p), inv(p.scale))
+plan_inv(p::ScaledPlan) = ScaledPlan(inv(p.p), inv(p.scale))
 
 LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
     LinearAlgebra.lmul!(p.scale, LinearAlgebra.mul!(y, p.p, x))
