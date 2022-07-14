@@ -600,12 +600,15 @@ mutable struct AdjointPlan{T,P<:Plan} <: Plan{T}
 end
 
 """
+    p'
     adjoint(p::Plan)
 
-Form the adjoint operator of an FFT plan. Returns a plan `p'` which performs the adjoint operation
+Form the adjoint operator of an FFT plan. Returns a plan which performs the adjoint operation
 the original plan. Note that this differs from the corresponding backwards plan in the case of real
 FFTs due to the halving of one of the dimensions of the FFT output, as described in [`rfft`](@ref).
-Adjoint plans do not currently support `mul!`.
+
+!!! note
+    Adjoint plans do not currently support `LinearAlgebra.mul!`.
 """
 Base.adjoint(p::Plan{T}) where {T} = AdjointPlan{T, typeof(p)}(p)
 Base.adjoint(p::AdjointPlan) = p.p
