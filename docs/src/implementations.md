@@ -36,7 +36,7 @@ To define a new FFT implementation in your own module, you should
 * To enable automatic computation of adjoint plans via [`Base.adjoint`](@ref) (used in rules for reverse differentiation), define the trait `AbstractFFTs.ProjectionStyle(::MyPlan)`, which can take values:
     * `AbstractFFTs.NoProjectionStyle()`,
     * `AbstractFFTs.RealProjectionStyle()`, for plans which halve one of the output's dimensions analogously to [`rfft`](@ref),
-    * `AbstractFFTs.RealInverseProjectionStyle(d::Integer)`, for plans which expect an input with a halved dimension analogously to [`irfft`](@ref), where `d` is the original length of the dimension.
+    * `AbstractFFTs.RealInverseProjectionStyle(d::Int)`, for plans which expect an input with a halved dimension analogously to [`irfft`](@ref), where `d` is the original length of the dimension.
 
 The normalization convention for your FFT should be that it computes yₖ = ∑ⱼ xⱼ exp(-2πi jk/n) for a transform of
 length n, and the "backwards" (unnormalized inverse) transform computes the same thing but with exp(+2πi jk/n).

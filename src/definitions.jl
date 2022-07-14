@@ -588,8 +588,6 @@ struct RealInverseProjectionStyle
 end
 const ProjectionStyle = Union{NoProjectionStyle, RealProjectionStyle, RealInverseProjectionStyle}
 
-function irfft_dim end
-
 output_size(p::Plan) = _output_size(p, ProjectionStyle(p))
 _output_size(p::Plan, ::NoProjectionStyle) = size(p)
 _output_size(p::Plan, ::RealProjectionStyle) = rfft_output_size(size(p), fftdims(p))
