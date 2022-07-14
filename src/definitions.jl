@@ -602,7 +602,7 @@ mutable struct AdjointPlan{T,P<:Plan} <: Plan{T}
 end
 
 """
-    Base.adjoint(p::Plan)
+    adjoint(p::Plan)
 
 Form the adjoint operator of an FFT plan. Returns a plan `p'` which performs the adjoint operation
 the original plan. Note that this differs from the corresponding backwards plan in the case of real

@@ -20,6 +20,7 @@ AbstractFFTs.plan_rfft
 AbstractFFTs.plan_brfft
 AbstractFFTs.plan_irfft
 AbstractFFTs.fftdims
+Base.adjoint
 AbstractFFTs.fftshift
 AbstractFFTs.fftshift!
 AbstractFFTs.ifftshift
