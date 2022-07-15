@@ -608,7 +608,8 @@ the original plan. Note that this differs from the corresponding backwards plan 
 FFTs due to the halving of one of the dimensions of the FFT output, as described in [`rfft`](@ref).
 
 !!! note
-    Adjoint plans do not currently support `LinearAlgebra.mul!`.
+    Adjoint plans do not currently support `LinearAlgebra.mul!`. Further, as a new addition to `AbstractFFTs`, 
+    coverage of `Base.adjoint` in downstream implementations may be limited. 
 """
 Base.adjoint(p::Plan{T}) where {T} = AdjointPlan{T, typeof(p)}(p)
 Base.adjoint(p::AdjointPlan) = p.p
