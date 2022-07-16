@@ -234,6 +234,8 @@ plan_rfft(x::AbstractArray, region; kws...) = plan_rfft(realfloat(x), region; kw
 _pinv_type(p::Plan) = typeof([plan_inv(x) for x in typeof(p)[]])
 pinv_type(p::Plan) = eltype(_pinv_type(p))
 
+function plan_inv end
+
 inv(p::Plan) =
     isdefined(p, :pinv) ? p.pinv::pinv_type(p) : (p.pinv = plan_inv(p))
 \(p::Plan, x::AbstractArray) = inv(p) * x
@@ -243,10 +245,9 @@ LinearAlgebra.ldiv!(y::AbstractArray, p::Plan, x::AbstractArray) = LinearAlgebra
 # implementations only need to provide the unnormalized backwards FFT,
 # similar to FFTW, and we do the scaling generically to get the ifft:
 
-mutable struct ScaledPlan{T,P,N} <: Plan{T}
+struct ScaledPlan{T,P,N} <: Plan{T}
     p::P
     scale::N # not T, to avoid unnecessary promotion to Complex
-    pinv::Plan
     ScaledPlan{T,P,N}(p, scale) where {T,P,N} = new(p, scale)
 end
 ScaledPlan{T}(p::P, scale::N) where {T,P,N} = ScaledPlan{T,P,N}(p, scale)
@@ -278,7 +279,7 @@ plan_ifft(x::AbstractArray, region; kws...) =
 plan_ifft!(x::AbstractArray, region; kws...) =
     ScaledPlan(plan_bfft!(x, region; kws...), normalization(x, region))
 
-plan_inv(p::ScaledPlan) = ScaledPlan(inv(p.p), inv(p.scale))
+inv(p::ScaledPlan) = ScaledPlan(inv(p.p), inv(p.scale))
 
 LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
     LinearAlgebra.lmul!(p.scale, LinearAlgebra.mul!(y, p.p, x))
