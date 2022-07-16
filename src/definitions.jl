@@ -593,9 +593,8 @@ _output_size(p::Plan, ::NoProjectionStyle) = size(p)
 _output_size(p::Plan, ::RealProjectionStyle) = rfft_output_size(size(p), fftdims(p))
 _output_size(p::Plan, s::RealInverseProjectionStyle) = brfft_output_size(size(p), s.dim, fftdims(p))
 
-mutable struct AdjointPlan{T,P<:Plan} <: Plan{T}
+struct AdjointPlan{T,P<:Plan} <: Plan{T}
     p::P
-    pinv::Plan
     AdjointPlan{T,P}(p) where {T,P} = new(p)
 end
 
@@ -653,4 +652,4 @@ function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealInverseProjectionStyle)
     return scale ./ N .* (p.p \ x)
 end
 
-plan_inv(p::AdjointPlan) = adjoint(plan_inv(p.p))
+inv(p::AdjointPlan) = adjoint(inv(p.p))
