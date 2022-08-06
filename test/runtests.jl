@@ -1,9 +1,10 @@
 # This file contains code that was formerly part of Julia. License is MIT: https://julialang.org/license
 
 using AbstractFFTs
-using AbstractFFTs: Plan
+using AbstractFFTs: Plan, ScaledPlan
 using ChainRulesTestUtils
-using ChainRulesCore: NoTangent
+using FiniteDifferences
+import ChainRulesCore
 
 using LinearAlgebra
 using Random
@@ -293,9 +294,21 @@ end
     end
 
     @testset "fft" begin
-        for x in (randn(2), randn(2, 3), randn(3, 4, 5))
-            N = ndims(x)
-            complex_x = complex.(x)
+        # Overloads to allow ChainRulesTestUtils to test rules w.r.t. ScaledPlan's. See https://github.com/JuliaDiff/ChainRulesTestUtils.jl/issues/256
+        InnerPlan = Union{TestPlan, InverseTestPlan, TestRPlan, InverseTestRPlan}
+        function FiniteDifferences.to_vec(x::InnerPlan)
+            function FFTPlan_from_vec(x_vec::Vector)
+                return x
+            end
+            return Bool[], FFTPlan_from_vec
+        end
+        ChainRulesTestUtils.test_approx(::ChainRulesCore.AbstractZero, x::InnerPlan, msg=""; kwargs...) = true
+        ChainRulesTestUtils.rand_tangent(::AbstractRNG, x::InnerPlan) = ChainRulesCore.NoTangent()
+
+        for x_shape in ((2,), (2, 3), (3, 4, 5))
+            N = length(x_shape)
+            x = randn(x_shape)
+            complex_x = x + randn(x_shape) * im
             for dims in unique((1, 1:N, N))
                 # fft, ifft, bfft
                 for f in (fft, ifft, bfft)
@@ -305,17 +318,17 @@ end
                     test_rrule(f, complex_x, dims)
                 end
                 for pf in (plan_fft, plan_ifft, plan_bfft) 
-                    test_frule(*, pf(x, dims) ⊢ NoTangent(), x)
-                    test_rrule(*, pf(x, dims) ⊢ NoTangent(), x)
-                    test_frule(*, pf(complex_x, dims) ⊢ NoTangent(), complex_x)
-                    test_rrule(*, pf(complex_x, dims) ⊢ NoTangent(), complex_x)
+                    test_frule(*, pf(x, dims), x)
+                    test_rrule(*, pf(x, dims), x)
+                    test_frule(*, pf(complex_x, dims), complex_x)
+                    test_rrule(*, pf(complex_x, dims), complex_x)
                 end
 
                 # rfft 
                 test_frule(rfft, x, dims)
                 test_rrule(rfft, x, dims)
-                test_frule(*, plan_rfft(x, dims) ⊢ NoTangent(), x)
-                test_rrule(*, plan_rfft(x, dims) ⊢ NoTangent(), x)
+                test_frule(*, plan_rfft(x, dims), x)
+                test_rrule(*, plan_rfft(x, dims), x)
 
                 # irfft, brfft
                 for f in (irfft, brfft)
@@ -328,8 +341,8 @@ end
                 end
                 for pf in (plan_irfft, plan_brfft) 
                     for d in (2 * size(x, first(dims)) - 1, 2 * size(x, first(dims)) - 2)
-                        test_frule(*, pf(complex_x, d, dims) ⊢ NoTangent(), complex_x)
-                        test_rrule(*, pf(complex_x, d, dims) ⊢ NoTangent(), complex_x)
+                        test_frule(*, pf(complex_x, d, dims), complex_x)
+                        test_rrule(*, pf(complex_x, d, dims), complex_x)
                     end
                 end
             end
