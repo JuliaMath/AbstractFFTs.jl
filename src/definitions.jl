@@ -626,7 +626,7 @@ function _mul(p::AdjointPlan{T}, x::AbstractArray, ::NoProjectionStyle) where {T
     return (p.p \ x) / N
 end
 
-function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealProjectionStyle) where {T}
+function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealProjectionStyle) where {T<:Real}
     dims = fftdims(p.p)
     N = normalization(T, size(p.p), dims)
     halfdim = first(dims)
