@@ -92,11 +92,11 @@ Base.:*(p::InverseTestPlan, x::AbstractArray) = mul!(similar(x, complex(float(el
 mutable struct TestRPlan{T,N} <: Plan{T}
     region
     sz::NTuple{N,Int}
-    pinv::Plan{T}
+    pinv::Plan{Complex{T}}
     TestRPlan{T}(region, sz::NTuple{N,Int}) where {T,N} = new{T,N}(region, sz)
 end
 
-mutable struct InverseTestRPlan{T,N} <: Plan{T}
+mutable struct InverseTestRPlan{T,N} <: Plan{Complex{T}}
     d::Int
     region
     sz::NTuple{N,Int}
@@ -107,10 +107,10 @@ mutable struct InverseTestRPlan{T,N} <: Plan{T}
     end
 end
 
-function AbstractFFTs.plan_rfft(x::AbstractArray{T}, region; kwargs...) where {T}
+function AbstractFFTs.plan_rfft(x::AbstractArray{T}, region; kwargs...) where {T<:Real}
     return TestRPlan{T}(region, size(x))
 end
-function AbstractFFTs.plan_brfft(x::AbstractArray{T}, d, region; kwargs...) where {T}
+function AbstractFFTs.plan_brfft(x::AbstractArray{Complex{T}}, d, region; kwargs...) where {T}
     return InverseTestRPlan{T}(d, region, size(x))
 end
 function AbstractFFTs.plan_inv(p::TestRPlan{T,N}) where {T,N}
