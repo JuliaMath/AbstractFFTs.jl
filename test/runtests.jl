@@ -238,7 +238,7 @@ end
             y = randn(size(x))
             for dims in unique((1, 1:N, N))
                 P = plan_fft(x, dims)
-                @test (P')' * x == P * x # test adjoint of adjoint
+                @test (P')' === P # test adjoint of adjoint
                 @test size(P') == AbstractFFTs.output_size(P) # test size of adjoint 
                 @test dot(y, P * x) ≈ dot(P' * y, x) # test validity of adjoint
                 @test dot(y, P \ x) ≈ dot(P' \ y, x)
@@ -259,13 +259,13 @@ end
                 y = randn(Complex{Float64}, size(P * x))
                 @test (P')' * x == P * x
                 @test size(P') == AbstractFFTs.output_size(P) 
-                @test dot(y_real, real.(P * x)) + dot(y_imag, imag.(P * x)) ≈ dot(P' * y, x)
-                @test dot(y_real, real.(P' \ x)) + dot(y_imag, imag.(P' \ x)) ≈ dot(P \ y, x)
+                @test dot(real.(y), real.(P * x)) + dot(imag.(y), imag.(P * x)) ≈ dot(P' * y, x)
+                @test dot(real.(y), real.(P' \ x)) + dot(imag.(y), imag.(P' \ x)) ≈ dot(P \ y, x)
                 Pinv = plan_irfft(y, size(x)[first(dims)], dims)
                 @test (Pinv')' * y == Pinv * y
                 @test size(Pinv') == AbstractFFTs.output_size(Pinv) 
-                @test dot(x, Pinv * y) ≈ dot(y_real, real.(Pinv' * x)) + dot(y_imag, imag.(Pinv' * x))
-                @test dot(x, Pinv' \ y) ≈ dot(y_real, real.(Pinv \ x)) + dot(y_imag, imag.(Pinv \ x))
+                @test dot(x, Pinv * y) ≈ dot(real.(y), real.(Pinv' * x)) + dot(imag.(y), imag.(Pinv' * x))
+                @test dot(x, Pinv' \ y) ≈ dot(real.(y), real.(Pinv \ x)) + dot(imag.(y), imag.(Pinv \ x))
             end
         end
     end
