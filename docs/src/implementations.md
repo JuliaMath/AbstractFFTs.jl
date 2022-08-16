@@ -20,10 +20,9 @@ To define a new FFT implementation in your own module, you should
 * Define a new method `AbstractFFTs.plan_fft(x, region; kws...)` that returns a `MyPlan` for at least some types of
   `x` and some set of dimensions `region`.   The `region` (or a copy thereof) should be accessible via `fftdims(p::MyPlan)` (which defaults to `p.region`).
 
-* Define a method of `LinearAlgebra.mul!(y, p::MyPlan, x)` (or `A_mul_B!(y, p::MyPlan, x)` on Julia prior to
-  0.7.0-DEV.3204) that computes the transform `p` of `x` and stores the result in `y`.
+* Define a method of `LinearAlgebra.mul!(y, p::MyPlan, x)` that computes the transform `p` of `x` and stores the result in `y`.
 
-* Define a method of `*(p::MyPlan, x)`, which can simply call your `mul!` (or `A_mul_B!`) method.
+* Define a method of `*(p::MyPlan, x)`, which can simply call your `mul!` method.
   This is not defined generically in this package due to subtleties that arise for in-place and real-input FFTs.
 
 * If the inverse transform is implemented, you should also define `plan_inv(p::MyPlan)`, which should construct the
@@ -33,7 +32,7 @@ To define a new FFT implementation in your own module, you should
 
 * You can also define similar methods of `plan_rfft` and `plan_brfft` for real-input FFTs.
 
-* To enable automatic computation of adjoint plans via [`Base.adjoint`](@ref) (used in rules for reverse differentiation), define the trait `AbstractFFTs.ProjectionStyle(::MyPlan)`, which can take values:
+* To enable automatic computation of adjoint plans via [`Base.adjoint`](@ref) (used in rules for reverse-mode differentiation), define the trait `AbstractFFTs.ProjectionStyle(::MyPlan)`, which can take values:
     * `AbstractFFTs.NoProjectionStyle()`,
     * `AbstractFFTs.RealProjectionStyle()`, for plans which halve one of the output's dimensions analogously to [`rfft`](@ref),
     * `AbstractFFTs.RealInverseProjectionStyle(d::Int)`, for plans which expect an input with a halved dimension analogously to [`irfft`](@ref), where `d` is the original length of the dimension.

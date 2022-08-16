@@ -170,20 +170,19 @@ end
 
 function ChainRulesCore.frule((_, ΔP, Δx), ::typeof(*), P::ScaledPlan, x::AbstractArray) 
     y = P * x 
-    Δy = P * Δx + ΔP.scale / P.scale * y
+    Δy = P * Δx .+ (ΔP.scale / P.scale) .* y
     return y, Δy
 end
 function ChainRulesCore.rrule(::typeof(*), P::ScaledPlan, x::AbstractArray)
     y = P * x
     project_x = ChainRulesCore.ProjectTo(x)
-    project_scale = ChainRulesCore.ProjectTo(P.scale)
     Pt = P'
     scale = P.scale
-    function mul_plan_pullback(ȳ)
+    function mul_scaledplan_pullback(ȳ)
         x̄ = ChainRulesCore.@thunk(project_x(Pt * ȳ))
-        scale_tangent = ChainRulesCore.@thunk(project_scale(sum(conj(y) .* ȳ) / conj(scale)))
+        scale_tangent = ChainRulesCore.@thunk(dot(y, ȳ) / conj(scale))
         plan_tangent = ChainRulesCore.Tangent{typeof(P)}(;p=ChainRulesCore.NoTangent(), scale=scale_tangent)
         return ChainRulesCore.NoTangent(), plan_tangent, x̄ 
     end
-    return y, mul_plan_pullback
+    return y, mul_scaledplan_pullback
 end

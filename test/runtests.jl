@@ -206,7 +206,7 @@ end
             y = randn(size(x))
             for dims in unique((1, 1:N, N))
                 P = plan_fft(x, dims)
-                @test AbstractFFTs.output_size(P) == size(x)
+                @test @inferred(AbstractFFTs.output_size(P)) == size(x)
                 @test AbstractFFTs.output_size(P') == size(x)
                 Pinv = plan_ifft(x)
                 @test AbstractFFTs.output_size(Pinv) == size(x)
@@ -222,7 +222,7 @@ end
                 Px_sz = size(P * x)
                 @test AbstractFFTs.output_size(P) == Px_sz 
                 @test AbstractFFTs.output_size(P') == size(x) 
-                y = randn(Px_sz) .+ randn(Px_sz) * im
+                y = randn(Complex{Float64}, Px_sz)
                 Pinv = plan_irfft(y, size(x)[first(dims)], dims)
                 @test AbstractFFTs.output_size(Pinv) == size(Pinv * y)
                 @test AbstractFFTs.output_size(Pinv') == size(y)
@@ -256,9 +256,7 @@ end
             N = ndims(x)
             for dims in unique((1, 1:N, N))
                 P = plan_rfft(x, dims)        
-                y_real = randn(size(P * x))
-                y_imag = randn(size(P * x))
-                y = y_real .+ y_imag .* im 
+                y = randn(Complex{Float64}, size(P * x))
                 @test (P')' * x == P * x
                 @test size(P') == AbstractFFTs.output_size(P) 
                 @test dot(y_real, real.(P * x)) + dot(y_imag, imag.(P * x)) ≈ dot(P' * y, x)
