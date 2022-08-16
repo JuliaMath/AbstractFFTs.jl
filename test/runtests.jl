@@ -201,16 +201,19 @@ end
 
 @testset "output size" begin
     @testset "complex fft output size" begin
-        for x in (randn(3), randn(3, 4), randn(3, 4, 5))
-            N = ndims(x)
-            y = randn(size(x))
-            for dims in unique((1, 1:N, N))
-                P = plan_fft(x, dims)
-                @test @inferred(AbstractFFTs.output_size(P)) == size(x)
-                @test AbstractFFTs.output_size(P') == size(x)
-                Pinv = plan_ifft(x)
-                @test AbstractFFTs.output_size(Pinv) == size(x)
-                @test AbstractFFTs.output_size(Pinv') == size(x)
+        for x_shape in ((3,), (3, 4), (3, 4, 5))
+            N = length(x_shape)
+            real_x = randn(x_shape)
+            complex_x = randn(ComplexF64, x_shape)
+            for x in (real_x, complex_x)
+                for dims in unique((1, 1:N, N))
+                    P = plan_fft(x, dims)
+                    @test @inferred(AbstractFFTs.output_size(P)) == size(x)
+                    @test AbstractFFTs.output_size(P') == size(x)
+                    Pinv = plan_ifft(x)
+                    @test AbstractFFTs.output_size(Pinv) == size(x)
+                    @test AbstractFFTs.output_size(Pinv') == size(x)
+                end
             end
         end
     end
@@ -222,7 +225,7 @@ end
                 Px_sz = size(P * x)
                 @test AbstractFFTs.output_size(P) == Px_sz 
                 @test AbstractFFTs.output_size(P') == size(x) 
-                y = randn(Complex{Float64}, Px_sz)
+                y = randn(ComplexF64, Px_sz)
                 Pinv = plan_irfft(y, size(x)[first(dims)], dims)
                 @test AbstractFFTs.output_size(Pinv) == size(Pinv * y)
                 @test AbstractFFTs.output_size(Pinv') == size(y)
@@ -233,21 +236,25 @@ end
 
 @testset "adjoint" begin
     @testset "complex fft adjoint" begin
-        for x in (randn(3), randn(3, 4), randn(3, 4, 5))
-            N = ndims(x)
-            y = randn(size(x))
-            for dims in unique((1, 1:N, N))
-                P = plan_fft(x, dims)
-                @test (P')' === P # test adjoint of adjoint
-                @test size(P') == AbstractFFTs.output_size(P) # test size of adjoint 
-                @test dot(y, P * x) ≈ dot(P' * y, x) # test validity of adjoint
-                @test dot(y, P \ x) ≈ dot(P' \ y, x)
-                Pinv = plan_ifft(y)
-                @test (Pinv')' * y == Pinv * y 
-                @test size(Pinv') == AbstractFFTs.output_size(Pinv) 
-                @test dot(x, Pinv * y) ≈ dot(Pinv' * x, y)
-                @test dot(x, Pinv \ y) ≈ dot(Pinv' \ x, y)
-                @test_throws MethodError mul!(x, P', y)
+        for x_shape in ((3,), (3, 4), (3, 4, 5))
+            N = length(x_shape)
+            real_x = randn(x_shape)
+            complex_x = randn(ComplexF64, x_shape)
+            y = randn(ComplexF64, x_shape)
+            for x in (real_x, complex_x)
+                for dims in unique((1, 1:N, N))
+                    P = plan_fft(x, dims)
+                    @test (P')' === P # test adjoint of adjoint
+                    @test size(P') == AbstractFFTs.output_size(P) # test size of adjoint 
+                    @test dot(y, P * x) ≈ dot(P' * y, x) # test validity of adjoint
+                    @test dot(y, P \ x) ≈ dot(P' \ y, x)
+                    Pinv = plan_ifft(y)
+                    @test (Pinv')' * y == Pinv * y 
+                    @test size(Pinv') == AbstractFFTs.output_size(Pinv) 
+                    @test dot(x, Pinv * y) ≈ dot(Pinv' * x, y)
+                    @test dot(x, Pinv \ y) ≈ dot(Pinv' \ x, y)
+                    @test_throws MethodError mul!(x, P', y)
+                end
             end
         end
     end
@@ -256,7 +263,7 @@ end
             N = ndims(x)
             for dims in unique((1, 1:N, N))
                 P = plan_rfft(x, dims)        
-                y = randn(Complex{Float64}, size(P * x))
+                y = randn(ComplexF64, size(P * x))
                 @test (P')' * x == P * x
                 @test size(P') == AbstractFFTs.output_size(P) 
                 @test dot(real.(y), real.(P * x)) + dot(imag.(y), imag.(P * x)) ≈ dot(P' * y, x)
@@ -306,7 +313,7 @@ end
         for x_shape in ((2,), (2, 3), (3, 4, 5))
             N = length(x_shape)
             x = randn(x_shape)
-            complex_x = x + randn(x_shape) * im
+            complex_x = randn(ComplexF64, x_shape) 
             for dims in unique((1, 1:N, N))
                 # fft, ifft, bfft
                 for f in (fft, ifft, bfft)
