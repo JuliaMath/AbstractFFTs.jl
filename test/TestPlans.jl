@@ -1,3 +1,8 @@
+module TestPlans
+
+using AbstractFFTs
+using AbstractFFTs: Plan
+
 mutable struct TestPlan{T,N} <: Plan{T}
     region
     sz::NTuple{N,Int}
@@ -225,4 +230,6 @@ function Base.:*(p::InverseTestRPlan, x::AbstractArray)
     real_invdft!(y, x, p.region)
 
     return y
+end
+
 end
