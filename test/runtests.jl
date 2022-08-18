@@ -56,11 +56,15 @@ end
         dims = ndims(x)
         y = AbstractFFTs.fft(x, dims)
         @test y ≈ fftw_fft
-        P = plan_fft(x, dims)
-        @test eltype(P) === ComplexF64
-        @test P * x ≈ fftw_fft
-        @test P \ (P * x) ≈ x
-        @test fftdims(P) == dims
+        # test plan_fft and also inv and plan_inv of plan_ifft, which should all give 
+        # functionally identical plans
+        for P in [plan_fft(x, dims), inv(plan_ifft(x, dims)), 
+                  AbstractFFTs.plan_inv(plan_ifft(x, dims))]
+            @test eltype(P) === ComplexF64
+            @test P * x ≈ fftw_fft
+            @test P \ (P * x) ≈ x
+            @test fftdims(P) == dims
+        end
 
         fftw_bfft = complex.(size(x, dims) .* x)
         @test AbstractFFTs.bfft(y, dims) ≈ fftw_bfft
@@ -71,10 +75,14 @@ end
 
         fftw_ifft = complex.(x)
         @test AbstractFFTs.ifft(y, dims) ≈ fftw_ifft
-        P = plan_ifft(x, dims)
-        @test P * y ≈ fftw_ifft
-        @test P \ (P * y) ≈ y
-        @test fftdims(P) == dims
+        # test plan_ifft and also inv and plan_inv of plan_fft, which should all give 
+        # functionally identical plans
+        for P in [plan_ifft(x, dims), inv(plan_fft(x, dims)), 
+                  AbstractFFTs.plan_inv(plan_fft(x, dims))]
+            @test P * y ≈ fftw_ifft
+            @test P \ (P * y) ≈ y
+            @test fftdims(P) == dims
+        end
 
         # real FFT
         fftw_rfft = fftw_fft[
@@ -83,11 +91,15 @@ end
         ]
         ry = AbstractFFTs.rfft(x, dims)
         @test ry ≈ fftw_rfft
-        P = plan_rfft(x, dims)
-        @test eltype(P) === Int
-        @test P * x ≈ fftw_rfft
-        @test P \ (P * x) ≈ x
-        @test fftdims(P) == dims
+        # test plan_rfft and also inv and plan_inv of plan_irfft, which should all give 
+        # functionally identical plans
+        for P in [plan_rfft(x, dims), inv(plan_irfft(ry, size(x, dims), dims)), 
+                  AbstractFFTs.plan_inv(plan_irfft(ry, size(x, dims), dims))]
+            @test eltype(P) <: Real
+            @test P * x ≈ fftw_rfft
+            @test P \ (P * x) ≈ x
+            @test fftdims(P) == dims
+        end
 
         fftw_brfft = complex.(size(x, dims) .* x)
         @test AbstractFFTs.brfft(ry, size(x, dims), dims) ≈ fftw_brfft
@@ -98,10 +110,14 @@ end
 
         fftw_irfft = complex.(x)
         @test AbstractFFTs.irfft(ry, size(x, dims), dims) ≈ fftw_irfft
-        P = plan_irfft(ry, size(x, dims), dims)
-        @test P * ry ≈ fftw_irfft
-        @test P \ (P * ry) ≈ ry
-        @test fftdims(P) == dims
+        # test plan_rfft and also inv and plan_inv of plan_irfft, which should all give 
+        # functionally identical plans
+        for P in [plan_irfft(ry, size(x, dims), dims), inv(plan_rfft(x, dims)), 
+                  AbstractFFTs.plan_inv(plan_rfft(x, dims))]
+            @test P * ry ≈ fftw_irfft
+            @test P \ (P * ry) ≈ ry
+            @test fftdims(P) == dims
+        end
     end
 end
 
