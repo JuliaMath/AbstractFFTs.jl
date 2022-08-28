@@ -654,4 +654,6 @@ function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealInverseProjectionStyle)
     return scale ./ N .* (p.p \ x)
 end
 
+# Analogously to ScaledPlan, define both plan_inv (for no caching) and inv (caches inner plan only).
+plan_inv(p::AdjointPlan) = adjoint(plan_inv(p.p)) 
 inv(p::AdjointPlan) = adjoint(inv(p.p))

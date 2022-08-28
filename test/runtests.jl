@@ -263,12 +263,14 @@ end
                     @test (P')' === P # test adjoint of adjoint
                     @test size(P') == AbstractFFTs.output_size(P) # test size of adjoint 
                     @test dot(y, P * x) ≈ dot(P' * y, x) # test validity of adjoint
-                    @test dot(y, P \ x) ≈ dot(P' \ y, x)
+                    @test dot(y, P \ x) ≈ dot(P' \ y, x) # test inv of adjoint
+                    @test dot(y, P \ x) ≈ dot(AbstractFFTs.plan_inv(P') * y, x) # test plan_inv of adjoint 
                     Pinv = plan_ifft(y)
                     @test (Pinv')' * y == Pinv * y 
                     @test size(Pinv') == AbstractFFTs.output_size(Pinv) 
                     @test dot(x, Pinv * y) ≈ dot(Pinv' * x, y)
                     @test dot(x, Pinv \ y) ≈ dot(Pinv' \ x, y)
+                    @test dot(x, Pinv \ y) ≈ dot(AbstractFFTs.plan_inv(Pinv') * x, y)
                     @test_throws MethodError mul!(x, P', y)
                 end
             end
@@ -281,14 +283,17 @@ end
                 P = plan_rfft(x, dims)        
                 y = randn(ComplexF64, size(P * x))
                 @test (P')' * x == P * x
-                @test size(P') == AbstractFFTs.output_size(P) 
+                @test size(P') == AbstractFFTs.output_size(P)
                 @test dot(real.(y), real.(P * x)) + dot(imag.(y), imag.(P * x)) ≈ dot(P' * y, x)
                 @test dot(real.(y), real.(P' \ x)) + dot(imag.(y), imag.(P' \ x)) ≈ dot(P \ y, x)
+                @test dot(real.(y), real.(AbstractFFTs.plan_inv(P') * x)) + 
+                      dot(imag.(y), imag.(AbstractFFTs.plan_inv(P') * x)) ≈ dot(P \ y, x)
                 Pinv = plan_irfft(y, size(x)[first(dims)], dims)
                 @test (Pinv')' * y == Pinv * y
                 @test size(Pinv') == AbstractFFTs.output_size(Pinv) 
                 @test dot(x, Pinv * y) ≈ dot(real.(y), real.(Pinv' * x)) + dot(imag.(y), imag.(Pinv' * x))
                 @test dot(x, Pinv' \ y) ≈ dot(real.(y), real.(Pinv \ x)) + dot(imag.(y), imag.(Pinv \ x))
+                @test dot(x, AbstractFFTs.plan_inv(Pinv') * y) ≈ dot(real.(y), real.(Pinv \ x)) + dot(imag.(y), imag.(Pinv \ x))
             end
         end
     end
