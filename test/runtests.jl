@@ -211,6 +211,9 @@ end
     # p::TestPlan)
     f9(p::Plan{T}, sz) where {T} = AbstractFFTs.normalization(real(T), sz, fftdims(p))
     @test @inferred(f9(plan_fft(zeros(10), 1), 10)) == 1/10
+
+    # normalization should be defined for 0d arrays
+    @test AbstractFFTs.normalization(zeros(), 1:0) == AbstractFFTs.normalization(zeros(1), 1:1)
 end
 
 @testset "ChainRules" begin
