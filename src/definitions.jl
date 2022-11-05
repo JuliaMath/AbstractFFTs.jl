@@ -272,7 +272,8 @@ summary(p::ScaledPlan) = string(p.scale, " * ", summary(p.p))
 
 # Normalization for ifft, given unscaled bfft, is 1/prod(dimensions)
 function normalization(::Type{T}, sz, region) where T
-    one(T) / Int(reduce(*, (sz[r] for r in region); init=1))::Int
+    @boundscheck !isempty(region) && checkindex(Bool, eachindex(sz), region)
+    one(T) / mapreduce(r -> Int(@inbounds sz[r]), *, region; init=1)
 end
 normalization(X, region) = normalization(real(eltype(X)), size(X), region)
 
