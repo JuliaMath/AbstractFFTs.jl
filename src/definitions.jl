@@ -272,11 +272,12 @@ summary(p::ScaledPlan) = string(p.scale, " * ", summary(p.p))
 
 # Normalization for ifft, given unscaled bfft, is 1/prod(dimensions)
 # ensure that region is a subset of eachindex(sz).
-_checkindex(sz, region::AbstractVector) = checkindex(Bool, sz, region)
+_checkindex(szinds, region::AbstractVector) = checkindex(Bool, szinds, region)
 # this method handles the case where region is not an array, e.g. it is a Tuple
-_checkindex(sz, region) = all(r -> checkindex(Bool, eachindex(sz), r), region)
-function normalization(::Type{T}, sz, region) where T
-    @boundscheck !isempty(region) && _checkindex(eachindex(sz), region)
+_checkindex(szinds, region) = all(r -> checkindex(Bool, szinds, r), region)
+@inline function normalization(::Type{T}, sz, region) where T
+    @boundscheck (!isempty(region) && _checkindex(eachindex(sz), region)) ||
+        throw(BoundsError(sz, region))
     one(T) / mapreduce(r -> Int(@inbounds sz[r])::Int, *, region; init=oneunit(eltype(sz)))::Int
 end
 normalization(X, region) = normalization(real(eltype(X)), size(X), region)
