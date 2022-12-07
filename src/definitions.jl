@@ -130,7 +130,14 @@ plan_fft
 """
     plan_fft!(A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
-Same as [`plan_fft`](@ref), but operates in-place on `A`.
+Same as [`plan_fft`](@ref),
+but creates a plan that operates in-place.
+`A` must be an array of complex floating-point numbers.
+When `p = plan_fft!(A, ...)`,
+one evaluates the FFT of an array `B`
+of the same `size`
+via `p * B` or via `mul!(B, p, B)`.
+For the `mul!` use, `B` must have the same `eltype` as `A`.
 """
 plan_fft!
 
