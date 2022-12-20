@@ -137,7 +137,7 @@ When `p = plan_fft!(A, ...)`,
 one evaluates the FFT of an array `B`
 of the same `size`
 via `p * B` or via `mul!(B, p, B)`.
-For the `mul!` use, `B` must have the same `eltype` as `A`.
+For the `mul!` use, `B` must have the same `eltype` and `strides` as `A`.
 """
 plan_fft!
 
