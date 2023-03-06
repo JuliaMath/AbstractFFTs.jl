@@ -150,3 +150,32 @@ function ChainRulesCore.rrule(::typeof(ifftshift), x::AbstractArray, dims)
     end
     return y, ifftshift_pullback
 end
+
+# explicitly handle the default dims argument because e.g. fft(x) does not necessarily call fft(x, dims). (PR #83)
+for f in (:fft, :rfft, :ifft, :bfft, :fftshift, :ifftshift)
+    @eval begin
+        function ChainRulesCore.frule((_, Δx), ::typeof($f), x::AbstractArray)
+            dims = 1:ndims(x)
+            return ChainRulesCore.frule((ChainRulesCore.NoTangent(), Δx, ChainRulesCore.NoTangent()), $f, x, dims) 
+        end
+        function ChainRulesCore.rrule(::typeof($f), x::AbstractArray)
+            dims = 1:ndims(x)
+            y, pb = ChainRulesCore.rrule($f, x, dims)
+            y, (ȳ -> pb(ȳ)[1:end-1])
+        end
+    end
+end
+for f in (:irfft, brfft)
+    @eval begin
+        function ChainRulesCore.frule((_, Δx, _), ::typeof($f), x::AbstractArray, d::Int)
+            dims = 1:ndims(x)
+            Δ = (ChainRulesCore.NoTangent(), Δx, ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent())
+            return ChainRulesCore.frule(Δ, $f, x, d, dims) 
+        end
+        function ChainRulesCore.rrule(::typeof($f), x::AbstractArray, d::Int)
+            dims = 1:ndims(x)
+            y, pb = ChainRulesCore.rrule($f, x, d, dims)
+            y, (ȳ -> pb(ȳ)[1:end-1])
+        end
+    end
+end

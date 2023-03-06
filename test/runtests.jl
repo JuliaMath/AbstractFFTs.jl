@@ -216,19 +216,23 @@ end
 @testset "ChainRules" begin
     @testset "shift functions" begin
         for x in (randn(3), randn(3, 4), randn(3, 4, 5))
-            for dims in ((), 1, 2, (1,2), 1:2)
-                any(d > ndims(x) for d in dims) && continue
+            # type inference checks of `rrule` fail on old Julia versions
+            # for higher-dimensional arrays:
+            # https://github.com/JuliaMath/AbstractFFTs.jl/pull/58#issuecomment-916530016
+            check_inferred = ndims(x) < 3 || VERSION >= v"1.6"
 
-                # type inference checks of `rrule` fail on old Julia versions
-                # for higher-dimensional arrays:
-                # https://github.com/JuliaMath/AbstractFFTs.jl/pull/58#issuecomment-916530016
-                check_inferred = ndims(x) < 3 || VERSION >= v"1.6"
+            for dims in ((), 1, 2, (1,2), 1:2, nothing)
+                # if dims=nothing, test handling of default dims argument 
+                args = (dims === nothing) ? () : (dims,)
+                real_dims = (dims === nothing) ? (1:ndims(x)) : dims
 
-                test_frule(AbstractFFTs.fftshift, x, dims)
-                test_rrule(AbstractFFTs.fftshift, x, dims; check_inferred=check_inferred)
+                any(d > ndims(x) for d in real_dims) && continue
 
-                test_frule(AbstractFFTs.ifftshift, x, dims)
-                test_rrule(AbstractFFTs.ifftshift, x, dims; check_inferred=check_inferred)
+                test_frule(AbstractFFTs.fftshift, x, args...)
+                test_rrule(AbstractFFTs.fftshift, x, args...; check_inferred=check_inferred)
+
+                test_frule(AbstractFFTs.ifftshift, x, args...)
+                test_rrule(AbstractFFTs.ifftshift, x, args...; check_inferred=check_inferred)
             end
         end
     end
@@ -237,23 +241,27 @@ end
         for x in (randn(3), randn(3, 4), randn(3, 4, 5))
             N = ndims(x)
             complex_x = complex.(x)
-            for dims in unique((1, 1:N, N))
+            for dims in unique((1, 1:N, N, nothing))
+                # if dims=nothing, test handling of default dims argument 
+                args = (dims === nothing) ? () : (dims,)
+                real_dims = (dims === nothing) ? (1:N) : dims
+
                 for f in (fft, ifft, bfft)
-                    test_frule(f, x, dims)
-                    test_rrule(f, x, dims)
-                    test_frule(f, complex_x, dims)
-                    test_rrule(f, complex_x, dims)
+                    test_frule(f, x, args...)
+                    test_rrule(f, x, args...)
+                    test_frule(f, complex_x, args...)
+                    test_rrule(f, complex_x, args...)
                 end
 
-                test_frule(rfft, x, dims)
-                test_rrule(rfft, x, dims)
+                test_frule(rfft, x, args...)
+                test_rrule(rfft, x, args...)
 
                 for f in (irfft, brfft)
-                    for d in (2 * size(x, first(dims)) - 1, 2 * size(x, first(dims)) - 2)
-                        test_frule(f, x, d, dims)
-                        test_rrule(f, x, d, dims)
-                        test_frule(f, complex_x, d, dims)
-                        test_rrule(f, complex_x, d, dims)
+                    for d in (2 * size(x, first(real_dims)) - 1, 2 * size(x, first(real_dims)) - 2)
+                        test_frule(f, x, d, args...)
+                        test_rrule(f, x, d, args...)
+                        test_frule(f, complex_x, d, args...)
+                        test_rrule(f, complex_x, d, args...)
                     end
                 end
             end
