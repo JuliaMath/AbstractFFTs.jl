@@ -213,6 +213,21 @@ end
     @test @inferred(f9(plan_fft(zeros(10), 1), 10)) == 1/10
 end
 
+# Test that dims defaults to 1:ndims for fft-like functions
+@testset "Default dims" begin
+    for x in (randn(3), randn(3, 4), randn(3, 4, 5))
+        N = ndims(x)
+        complex_x = complex.(x)
+        @test fft(x) ≈ fft(x, 1:N)
+        @test ifft(x) ≈ ifft(x, 1:N)
+        @test bfft(x) ≈ bfft(x, 1:N)
+        @test rfft(x) ≈ rfft(x, 1:N)
+        d = 2 * size(x, 1) - 1
+        @test irfft(x, d) ≈ irfft(x, d, 1:N)
+        @test brfft(x, d) ≈ brfft(x, d, 1:N)
+    end
+end
+
 @testset "ChainRules" begin
     @testset "shift functions" begin
         for x in (randn(3), randn(3, 4), randn(3, 4, 5))
