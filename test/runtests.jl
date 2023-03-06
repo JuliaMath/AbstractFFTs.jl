@@ -221,18 +221,14 @@ end
             # https://github.com/JuliaMath/AbstractFFTs.jl/pull/58#issuecomment-916530016
             check_inferred = ndims(x) < 3 || VERSION >= v"1.6"
 
-            for dims in ((), 1, 2, (1,2), 1:2, nothing)
-                # if dims=nothing, test handling of default dims argument 
-                args = (dims === nothing) ? () : (dims,)
-                real_dims = (dims === nothing) ? (1:ndims(x)) : dims
+            for dims in ((), 1, 2, (1,2), 1:2)
+                any(d > ndims(x) for d in dims) && continue
 
-                any(d > ndims(x) for d in real_dims) && continue
+                test_frule(AbstractFFTs.fftshift, x, dims)
+                test_rrule(AbstractFFTs.fftshift, x, dims; check_inferred=check_inferred)
 
-                test_frule(AbstractFFTs.fftshift, x, args...)
-                test_rrule(AbstractFFTs.fftshift, x, args...; check_inferred=check_inferred)
-
-                test_frule(AbstractFFTs.ifftshift, x, args...)
-                test_rrule(AbstractFFTs.ifftshift, x, args...; check_inferred=check_inferred)
+                test_frule(AbstractFFTs.ifftshift, x, dims)
+                test_rrule(AbstractFFTs.ifftshift, x, dims; check_inferred=check_inferred)
             end
         end
     end
@@ -244,7 +240,7 @@ end
             for dims in unique((1, 1:N, N, nothing))
                 # if dims=nothing, test handling of default dims argument 
                 args = (dims === nothing) ? () : (dims,)
-                real_dims = (dims === nothing) ? (1:N) : dims
+                true_dims = (dims === nothing) ? (1:N) : dims
 
                 for f in (fft, ifft, bfft)
                     test_frule(f, x, args...)
@@ -257,7 +253,7 @@ end
                 test_rrule(rfft, x, args...)
 
                 for f in (irfft, brfft)
-                    for d in (2 * size(x, first(real_dims)) - 1, 2 * size(x, first(real_dims)) - 2)
+                    for d in (2 * size(x, first(true_dims)) - 1, 2 * size(x, first(true_dims)) - 2)
                         test_frule(f, x, d, args...)
                         test_rrule(f, x, d, args...)
                         test_frule(f, complex_x, d, args...)
