@@ -228,6 +228,16 @@ end
     end
 end
 
+@testset "Complex float promotion for backwards real FFTs" begin
+    for x in (rand(-5:5, 3), rand(-5:5, 3, 4), rand(-5:5, 3, 4, 5))
+        N = ndims(x)
+        complex_x = complex.(x)
+        d = 2 * size(x, 1) - 1
+        @test irfft(x, d) ≈ irfft(complex.(x), d) ≈ irfft(complex.(float.(x)), d)
+        @test brfft(x, d) ≈ brfft(complex.(x), d) ≈ brfft(complex.(float.(x)), d)
+    end
+end
+
 @testset "ChainRules" begin
     @testset "shift functions" begin
         for x in (randn(3), randn(3, 4), randn(3, 4, 5))
