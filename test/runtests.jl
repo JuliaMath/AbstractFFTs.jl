@@ -239,25 +239,25 @@ end
             complex_x = complex.(x)
             for dims in unique((1, 1:N, N, nothing))
                 # if dims=nothing, test handling of default dims argument 
-                args = (dims === nothing) ? () : (dims,)
+                dims_args = (dims === nothing) ? () : (dims,)
                 true_dims = (dims === nothing) ? (1:N) : dims
 
                 for f in (fft, ifft, bfft)
-                    test_frule(f, x, args...)
-                    test_rrule(f, x, args...)
-                    test_frule(f, complex_x, args...)
-                    test_rrule(f, complex_x, args...)
+                    test_frule(f, x, dims_args...)
+                    test_rrule(f, x, dims_args...)
+                    test_frule(f, complex_x, dims_args...)
+                    test_rrule(f, complex_x, dims_args...)
                 end
 
-                test_frule(rfft, x, args...)
-                test_rrule(rfft, x, args...)
+                test_frule(rfft, x, dims_args...)
+                test_rrule(rfft, x, dims_args...)
 
                 for f in (irfft, brfft)
                     for d in (2 * size(x, first(true_dims)) - 1, 2 * size(x, first(true_dims)) - 2)
-                        test_frule(f, x, d, args...)
-                        test_rrule(f, x, d, args...)
-                        test_frule(f, complex_x, d, args...)
-                        test_rrule(f, complex_x, d, args...)
+                        test_frule(f, x, d, dims_args...)
+                        test_rrule(f, x, d, dims_args...)
+                        test_frule(f, complex_x, d, dims_args...)
+                        test_rrule(f, complex_x, d, dims_args...)
                     end
                 end
             end
