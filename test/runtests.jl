@@ -228,10 +228,12 @@ end
     end
 end
 
-@testset "Complex float promotion for backwards real FFTs" begin
+@testset "Complex float promotion" begin
     for x in (rand(-5:5, 3), rand(-5:5, 3, 4), rand(-5:5, 3, 4, 5))
         N = ndims(x)
-        complex_x = complex.(x)
+        @test fft(x) ≈ fft(complex.(x)) ≈ fft(complex.(float.(x)))
+        @test ifft(x) ≈ ifft(complex.(x)) ≈ ifft(complex.(float.(x)))
+        @test bfft(x) ≈ bfft(complex.(x)) ≈ bfft(complex.(float.(x)))
         d = 2 * size(x, 1) - 1
         @test irfft(x, d) ≈ irfft(complex.(x), d) ≈ irfft(complex.(float.(x)), d)
         @test brfft(x, d) ≈ brfft(complex.(x), d) ≈ brfft(complex.(float.(x)), d)
