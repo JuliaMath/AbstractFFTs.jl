@@ -1,4 +1,8 @@
-# ffts
+module AbstractFFTsChainRulesCoreExt
+
+using AbstractFFTs
+import ChainRulesCore
+
 function ChainRulesCore.frule((_, Δx, _), ::typeof(fft), x::AbstractArray, dims)
     y = fft(x, dims)
     Δy = fft(Δx, dims)
@@ -150,3 +154,5 @@ function ChainRulesCore.rrule(::typeof(ifftshift), x::AbstractArray, dims)
     end
     return y, ifftshift_pullback
 end
+
+end # module
