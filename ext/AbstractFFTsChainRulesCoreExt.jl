@@ -50,7 +50,7 @@ function ChainRulesCore.frule((_, Δx, _), ::typeof(ifft), x::AbstractArray, dim
 end
 function ChainRulesCore.rrule(::typeof(ifft), x::AbstractArray, dims)
     y = ifft(x, dims)
-    invN = normalization(y, dims)
+    invN = AbstractFFTs.normalization(y, dims)
     project_x = ChainRulesCore.ProjectTo(x)
     function ifft_pullback(ȳ)
         x̄ = project_x(invN .* fft(ChainRulesCore.unthunk(ȳ), dims))
@@ -70,7 +70,7 @@ function ChainRulesCore.rrule(::typeof(irfft), x::AbstractArray, d::Int, dims)
     # compute scaling factors
     halfdim = first(dims)
     n = size(x, halfdim)
-    invN = normalization(y, dims)
+    invN = AbstractFFTs.normalization(y, dims)
     twoinvN = 2 * invN
     scale = reshape(
         [i == 1 || (i == n && 2 * (i - 1) == d) ? invN : twoinvN for i in 1:n],
