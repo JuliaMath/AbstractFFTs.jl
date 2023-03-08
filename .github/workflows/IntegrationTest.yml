@@ -18,6 +18,7 @@ jobs:
         os: [ubuntu-latest]
         package:
           - {user: JuliaMath, repo: FFTW.jl}
+          - {user: JuliaApproximation, repo: FastTransforms.jl}
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
@@ -38,6 +39,10 @@ jobs:
             # force it to use this PR's version of the package
             Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
             Pkg.update()
+            # Temporarily fix FFTW at version 1.5 for FastTransforms.jl until FastTransforms.jl/{#192,#193} are resolved.
+            if "${{ matrix.package.repo }}" == "FastTransforms.jl"
+                Pkg.add(name="FFTW", version="1.5")
+            end
             Pkg.test()  # resolver may fail with test time deps 
           catch err
             err isa Pkg.Resolve.ResolverError || rethrow()
