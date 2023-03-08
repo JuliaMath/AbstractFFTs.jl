@@ -59,7 +59,7 @@ _to1(::Tuple, x) = copy1(eltype(x), x)
 for f in (:fft, :bfft, :ifft, :fft!, :bfft!, :ifft!, :rfft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray) = (y = to1(x); $pf(y) * y)
+        $f(x::AbstractArray) = $f(x, 1:ndims(x))
         $f(x::AbstractArray, region) = (y = to1(x); $pf(y, region) * y)
         $pf(x::AbstractArray; kws...) = (y = to1(x); $pf(y, 1:ndims(y); kws...))
     end
@@ -207,9 +207,9 @@ bfft!
 for f in (:fft, :bfft, :ifft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray{<:Real}, region=1:ndims(x)) = $f(complexfloat(x), region)
+        $f(x::AbstractArray{<:Real}, region) = $f(complexfloat(x), region)
         $pf(x::AbstractArray{<:Real}, region; kws...) = $pf(complexfloat(x), region; kws...)
-        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region=1:ndims(x)) = $f(complexfloat(x), region)
+        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region) = $f(complexfloat(x), region)
         $pf(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region; kws...) = $pf(complexfloat(x), region; kws...)
     end
 end
@@ -297,7 +297,7 @@ LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
 for f in (:brfft, :irfft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray, d::Integer) = $pf(x, d) * x
+        $f(x::AbstractArray, d::Integer) = $f(x, d, 1:ndims(x))
         $f(x::AbstractArray, d::Integer, region) = $pf(x, d, region) * x
         $pf(x::AbstractArray, d::Integer;kws...) = $pf(x, d, 1:ndims(x);kws...)
     end
@@ -305,8 +305,8 @@ end
 
 for f in (:brfft, :irfft)
     @eval begin
-        $f(x::AbstractArray{<:Real}, d::Integer, region=1:ndims(x)) = $f(complexfloat(x), d, region)
-        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, d::Integer, region=1:ndims(x)) = $f(complexfloat(x), d, region)
+        $f(x::AbstractArray{<:Real}, d::Integer, region) = $f(complexfloat(x), d, region)
+        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, d::Integer, region) = $f(complexfloat(x), d, region)
     end
 end
 
