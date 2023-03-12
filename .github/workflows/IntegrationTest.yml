@@ -18,6 +18,7 @@ jobs:
         os: [ubuntu-latest]
         package:
           - {user: JuliaMath, repo: FFTW.jl}
+          - {user: JuliaApproximation, repo: FastTransforms.jl}
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
