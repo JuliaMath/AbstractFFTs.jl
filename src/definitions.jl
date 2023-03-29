@@ -59,7 +59,7 @@ _to1(::Tuple, x) = copy1(eltype(x), x)
 for f in (:fft, :bfft, :ifft, :fft!, :bfft!, :ifft!, :rfft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray) = $f(x, 1:ndims(x))
+        $f(x::AbstractArray) = $f(x, ntuple(identity, ndims(x)))
         $f(x::AbstractArray, region) = (y = to1(x); $pf(y, region) * y)
         $pf(x::AbstractArray; kws...) = (y = to1(x); $pf(y, 1:ndims(y); kws...))
     end
@@ -213,7 +213,7 @@ for f in (:fft, :bfft, :ifft)
         $pf(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region; kws...) = $pf(complexfloat(x), region; kws...)
     end
 end
-rfft(x::AbstractArray{<:Union{Integer,Rational}}, region=1:ndims(x)) = rfft(realfloat(x), region)
+rfft(x::AbstractArray{<:Union{Integer,Rational}}, region=ntuple(identity, ndims(x))) = rfft(realfloat(x), region)
 plan_rfft(x::AbstractArray, region; kws...) = plan_rfft(realfloat(x), region; kws...)
 
 # only require implementation to provide *(::Plan{T}, ::Array{T})
@@ -297,9 +297,9 @@ LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
 for f in (:brfft, :irfft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray, d::Integer) = $f(x, d, 1:ndims(x))
+        $f(x::AbstractArray, d::Integer) = $f(x, d, ntuple(identity, ndims(x)))
         $f(x::AbstractArray, d::Integer, region) = $pf(x, d, region) * x
-        $pf(x::AbstractArray, d::Integer;kws...) = $pf(x, d, 1:ndims(x);kws...)
+        $pf(x::AbstractArray, d::Integer;kws...) = $pf(x, d, ntuple(identity, ndims(x));kws...)
     end
 end
 
@@ -388,7 +388,7 @@ The output of `fftshift` is allocated. If one desires to store the output in a p
 """
 fftshift
 
-fftshift(x, dim = 1:ndims(x)) = fftshift!(similar(x), x, dim)
+fftshift(x, dim = ntuple(identity, ndims(x))) = fftshift!(similar(x), x, dim)
 
 """
     ifftshift!(dest, src, [dim])
@@ -417,7 +417,7 @@ The output of `ifftshift` is allocated. If one desires to store the output in a 
 """
 ifftshift
 
-ifftshift(x, dim = 1:ndims(x)) = ifftshift!(similar(x), x, dim)
+ifftshift(x, dim = ntuple(identity, ndims(x))) = ifftshift!(similar(x), x, dim)
 
 ##############################################################################
 
