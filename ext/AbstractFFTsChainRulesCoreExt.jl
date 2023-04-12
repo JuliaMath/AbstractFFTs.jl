@@ -26,19 +26,24 @@ end
 function ChainRulesCore.rrule(::typeof(rfft), x::AbstractArray{<:Real}, dims)
     y = rfft(x, dims)
 
-    # compute scaling factors
     halfdim = first(dims)
     d = size(x, halfdim)
     n = size(y, halfdim)
 
     project_x = ChainRulesCore.ProjectTo(x)
     function rfft_pullback(ȳ)
-        dY = ChainRulesCore.unthunk(ȳ) ./ 2
-        selectdim(dY, halfdim, 1) .*= 2
+        dY = ChainRulesCore.unthunk(ȳ)
+        # apply scaling
+        dY_scaled = similar(dY)
+        dY_scaled .= dY
+        dY_scaled ./= 2
+        v = selectdim(dY_scaled, halfdim, 1)
+        v .*= 2
         if 2 * (n - 1) == d
-            selectdim(dY, halfdim, n) .*= 2
+            v = selectdim(dY_scaled, halfdim, n)
+            v .*= 2
         end
-        x̄ = project_x(brfft(dY, d, dims))
+        x̄ = project_x(brfft(dY_scaled, d, dims))
         return ChainRulesCore.NoTangent(), x̄, ChainRulesCore.NoTangent()
     end
     return y, rfft_pullback
@@ -68,19 +73,24 @@ end
 function ChainRulesCore.rrule(::typeof(irfft), x::AbstractArray, d::Int, dims)
     y = irfft(x, d, dims)
 
-    # compute scaling factors
     halfdim = first(dims)
     n = size(x, halfdim)
     invN = AbstractFFTs.normalization(y, dims)
 
     project_x = ChainRulesCore.ProjectTo(x)
     function irfft_pullback(ȳ)
-        dX = rfft(real.(ChainRulesCore.unthunk(ȳ)), dims) .* invN .* 2
-        selectdim(dX, halfdim, 1) ./= 2
+        dX = rfft(real.(ChainRulesCore.unthunk(ȳ)), dims)
+        # apply scaling
+        dX_scaled = similar(dX)
+        dX_scaled .= dX
+        dX_scaled .*= invN .* 2
+        v = selectdim(dX_scaled, halfdim, 1)
+        v ./= 2
         if 2 * (n - 1) == d
-            selectdim(dX, halfdim, n) ./= 2
+            v = selectdim(dX_scaled, halfdim, n)
+            v ./= 2
         end
-        x̄ = project_x(dX)
+        x̄ = project_x(dX_scaled)
         return ChainRulesCore.NoTangent(), x̄, ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent()
     end
     return y, irfft_pullback
@@ -109,18 +119,23 @@ end
 function ChainRulesCore.rrule(::typeof(brfft), x::AbstractArray, d::Int, dims)
     y = brfft(x, d, dims)
 
-    # compute scaling factors
     halfdim = first(dims)
     n = size(x, halfdim)
 
     project_x = ChainRulesCore.ProjectTo(x)
     function brfft_pullback(ȳ)
-        dX = rfft(real.(ChainRulesCore.unthunk(ȳ)), dims) .* 2
-        selectdim(dX, halfdim, 1) ./= 2
+        dX = rfft(real.(ChainRulesCore.unthunk(ȳ)), dims)
+        # apply scaling
+        dX_scaled = similar(dX)
+        dX_scaled .= dX
+        dX_scaled .*= 2
+        v = selectdim(dX_scaled, halfdim, 1)
+        v ./= 2
         if 2 * (n - 1) == d
-            selectdim(dX, halfdim, n) ./= 2
+            v = selectdim(dX_scaled, halfdim, n)
+            v ./= 2
         end
-        x̄ = project_x(dX)
+        x̄ = project_x(dX_scaled)
         return ChainRulesCore.NoTangent(), x̄, ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent()
     end
     return y, brfft_pullback
