@@ -36,6 +36,6 @@ To define a new FFT implementation in your own module, you should
 
 * You can also define similar methods of `plan_rfft` and `plan_brfft` for real-input FFTs.
 
-The normalization convention for your FFT should be that it computes $y_k = \sum_j \exp\(-2 \pi i \cdot \frac{j k}{n}\)$
+The normalization convention for your FFT should be that it computes $y_k = \sum_j \exp\(-2 \pi i \cdot \frac{j k}{n}\) x_j$
 for a transform of length $n$, and the "backwards" (unnormalized inverse) transform computes the same thing but with
 $\exp\(+2 \pi i \cdot \frac{j k}{n}\)$.
