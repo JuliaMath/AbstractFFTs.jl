@@ -360,21 +360,8 @@ three arguments have the same meaning as for [`irfft`](@ref).
 !!! note
     In contrast to plans created by [`plan_ifft`](@ref), the application of
     this plan via `mul!(A, P, Â)` will potentially **overwrite the input array** `Â`
-    in the case of multidimensional transforms! See example below
+    with undefined data in the case of multidimensional transforms!
 
-# Examples
-
-```
-julia> begin
-           A = Matrix{Float64}(undef, 5, 3)
-           Â = randn(ComplexF64, 3, 3)
-           Â_orig = copy(Â)
-           P = plan_irfft(Â, size(A, 1))
-           mul!(A, P, Â)
-           Â == Â_orig
-       end
-false
-```
 """
 plan_irfft
 
@@ -589,21 +576,8 @@ size of the transformed result, are the same as for [`rfft`](@ref).
 !!! note
     In contrast to plans created by [`plan_fft`](@ref), the application of the
     inverse of this plan via `ldiv!(A, P, Â)` will potentially **overwrite the input array**
-    `Â` in the case of multidimensional transforms! See example below
+    `Â` with undefined data in the case of multidimensional transforms!
 
-# Examples
-
-```
-julia> begin
-           A = Matrix{Float64}(undef, 5, 3)
-           Â = randn(ComplexF64, 3, 3)
-           Â_orig = copy(Â)
-           P = plan_rfft(A)
-           ldiv!(A, P, Â)
-           Â == Â_orig
-       end
-false
-```
 """
 plan_rfft
 
@@ -618,20 +592,7 @@ the same as for [`brfft`](@ref).
 !!! note
     In contrast to plans created by [`plan_bfft`](@ref), the application of
     this plan via `mul!(A, P, Â)` will potentially **overwrite the input array** `Â`
-    in the case of multidimensional transforms! See example below
+    with undefined data in the case of multidimensional transforms!
 
-# Examples
-
-```
-julia> begin
-           A = Matrix{Float64}(undef, 5, 3)
-           Â = randn(ComplexF64, 3, 3)
-           Â_orig = copy(Â)
-           P = plan_brfft(Â, size(A, 1))
-           mul!(A, P, Â)
-           Â == Â_orig
-       end
-false
-```
 """
 plan_brfft
