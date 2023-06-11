@@ -81,7 +81,9 @@ function ChainRulesCore.rrule(::typeof(irfft), x::AbstractArray, d::Int, dims)
 
     project_x = ChainRulesCore.ProjectTo(x)
     function irfft_pullback(ȳ)
-        x̄ = project_x(scale .* rfft(real.(ChainRulesCore.unthunk(ȳ)), dims))
+        ybar = ChainRulesCore.unthunk(ȳ)
+        _scale = convert(typeof(ybar),scale)
+        x̄ = project_x(_scale .* rfft(real.(ybar), dims))
         return ChainRulesCore.NoTangent(), x̄, ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent()
     end
     return y, irfft_pullback
