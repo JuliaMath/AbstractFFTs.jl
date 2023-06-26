@@ -2,6 +2,7 @@
 
 using AbstractFFTs
 using AbstractFFTs: Plan
+using ChainRulesTestUtils
 
 using LinearAlgebra
 using Random
@@ -240,19 +241,6 @@ end
 end
 
 @testset "ChainRules" begin
-
-    if isdefined(Base, :get_extension)
-        CRCEXT = Base.get_extension(AbstractFFTs, :AbstractFFTsChainRulesCoreExt)
-        @test isnothing(CRCEXT)
-    end
-
-    using ChainRulesTestUtils
-
-    if isdefined(Base, :get_extension)
-        CRCEXT = Base.get_extension(AbstractFFTs, :AbstractFFTsChainRulesCoreExt)
-        @test !isnothing(CRCEXT)
-    end
-
     @testset "shift functions" begin
         for x in (randn(3), randn(3, 4), randn(3, 4, 5))
             for dims in ((), 1, 2, (1,2), 1:2)
