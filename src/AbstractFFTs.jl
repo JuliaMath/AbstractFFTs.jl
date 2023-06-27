@@ -7,16 +7,8 @@ export fft, ifft, bfft, fft!, ifft!, bfft!,
 
 include("definitions.jl")
 
-@static if !isdefined(Base, :get_extension)
-    import Requires
-end
-
-@static if !isdefined(Base, :get_extension)
-    function __init__()
-        Requires.@require ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4" begin
-            include("../ext/AbstractFFTsChainRulesCoreExt.jl")
-        end
-    end
+if !isdefined(Base, :get_extension)
+    include("../ext/AbstractFFTsChainRulesCoreExt.jl")
 end
 
 end # module
