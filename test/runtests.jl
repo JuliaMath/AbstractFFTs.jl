@@ -299,6 +299,33 @@ end
     end
 end
 
+# Test that dims defaults to 1:ndims for fft-like functions
+@testset "Default dims" begin
+    for x in (randn(3), randn(3, 4), randn(3, 4, 5))
+        N = ndims(x)
+        complex_x = complex.(x)
+        @test fft(x) ≈ fft(x, 1:N)
+        @test ifft(x) ≈ ifft(x, 1:N)
+        @test bfft(x) ≈ bfft(x, 1:N)
+        @test rfft(x) ≈ rfft(x, 1:N)
+        d = 2 * size(x, 1) - 1
+        @test irfft(x, d) ≈ irfft(x, d, 1:N)
+        @test brfft(x, d) ≈ brfft(x, d, 1:N)
+    end
+end
+
+@testset "Complex float promotion" begin
+    for x in (rand(-5:5, 3), rand(-5:5, 3, 4), rand(-5:5, 3, 4, 5))
+        N = ndims(x)
+        @test fft(x) ≈ fft(complex.(x)) ≈ fft(complex.(float.(x)))
+        @test ifft(x) ≈ ifft(complex.(x)) ≈ ifft(complex.(float.(x)))
+        @test bfft(x) ≈ bfft(complex.(x)) ≈ bfft(complex.(float.(x)))
+        d = 2 * size(x, 1) - 1
+        @test irfft(x, d) ≈ irfft(complex.(x), d) ≈ irfft(complex.(float.(x)), d)
+        @test brfft(x, d) ≈ brfft(complex.(x), d) ≈ brfft(complex.(float.(x)), d)
+    end
+end
+
 @testset "ChainRules" begin
     @testset "shift functions" begin
         for x in (randn(3), randn(3, 4), randn(3, 4, 5))

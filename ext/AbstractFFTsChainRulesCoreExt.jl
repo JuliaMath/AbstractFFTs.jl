@@ -1,4 +1,8 @@
-# ffts
+module AbstractFFTsChainRulesCoreExt
+
+using AbstractFFTs
+import ChainRulesCore
+
 function ChainRulesCore.frule((_, Δx, _), ::typeof(fft), x::AbstractArray, dims)
     y = fft(x, dims)
     Δy = fft(Δx, dims)
@@ -33,7 +37,9 @@ function ChainRulesCore.rrule(::typeof(rfft), x::AbstractArray{<:Real}, dims)
 
     project_x = ChainRulesCore.ProjectTo(x)
     function rfft_pullback(ȳ)
-        x̄ = project_x(brfft(ChainRulesCore.unthunk(ȳ) ./ scale, d, dims))
+        ybar = ChainRulesCore.unthunk(ȳ)
+        _scale = convert(typeof(ybar),scale)
+        x̄ = project_x(brfft(ybar ./ _scale, d, dims))
         return ChainRulesCore.NoTangent(), x̄, ChainRulesCore.NoTangent()
     end
     return y, rfft_pullback
@@ -46,7 +52,7 @@ function ChainRulesCore.frule((_, Δx, _), ::typeof(ifft), x::AbstractArray, dim
 end
 function ChainRulesCore.rrule(::typeof(ifft), x::AbstractArray, dims)
     y = ifft(x, dims)
-    invN = normalization(y, dims)
+    invN = AbstractFFTs.normalization(y, dims)
     project_x = ChainRulesCore.ProjectTo(x)
     function ifft_pullback(ȳ)
         x̄ = project_x(invN .* fft(ChainRulesCore.unthunk(ȳ), dims))
@@ -66,7 +72,7 @@ function ChainRulesCore.rrule(::typeof(irfft), x::AbstractArray, d::Int, dims)
     # compute scaling factors
     halfdim = first(dims)
     n = size(x, halfdim)
-    invN = normalization(y, dims)
+    invN = AbstractFFTs.normalization(y, dims)
     twoinvN = 2 * invN
     scale = reshape(
         [i == 1 || (i == n && 2 * (i - 1) == d) ? invN : twoinvN for i in 1:n],
@@ -75,7 +81,9 @@ function ChainRulesCore.rrule(::typeof(irfft), x::AbstractArray, d::Int, dims)
 
     project_x = ChainRulesCore.ProjectTo(x)
     function irfft_pullback(ȳ)
-        x̄ = project_x(scale .* rfft(real.(ChainRulesCore.unthunk(ȳ)), dims))
+        ybar = ChainRulesCore.unthunk(ȳ)
+        _scale = convert(typeof(ybar),scale)
+        x̄ = project_x(_scale .* rfft(real.(ybar), dims))
         return ChainRulesCore.NoTangent(), x̄, ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent()
     end
     return y, irfft_pullback
@@ -152,12 +160,12 @@ function ChainRulesCore.rrule(::typeof(ifftshift), x::AbstractArray, dims)
 end
 
 # plans
-function ChainRulesCore.frule((_, _, Δx), ::typeof(*), P::Plan, x::AbstractArray) 
+function ChainRulesCore.frule((_, _, Δx), ::typeof(*), P::AbstractFFTs.Plan, x::AbstractArray) 
     y = P * x 
     Δy = P * Δx
     return y, Δy
 end
-function ChainRulesCore.rrule(::typeof(*), P::Plan, x::AbstractArray)
+function ChainRulesCore.rrule(::typeof(*), P::AbstractFFTs.Plan, x::AbstractArray)
     y = P * x
     project_x = ChainRulesCore.ProjectTo(x)
     Pt = P'
@@ -168,12 +176,12 @@ function ChainRulesCore.rrule(::typeof(*), P::Plan, x::AbstractArray)
     return y, mul_plan_pullback
 end
 
-function ChainRulesCore.frule((_, ΔP, Δx), ::typeof(*), P::ScaledPlan, x::AbstractArray) 
+function ChainRulesCore.frule((_, ΔP, Δx), ::typeof(*), P::AbstractFFTs.ScaledPlan, x::AbstractArray) 
     y = P * x 
     Δy = P * Δx .+ (ΔP.scale / P.scale) .* y
     return y, Δy
 end
-function ChainRulesCore.rrule(::typeof(*), P::ScaledPlan, x::AbstractArray)
+function ChainRulesCore.rrule(::typeof(*), P::AbstractFFTs.ScaledPlan, x::AbstractArray)
     y = P * x
     Pt = P'
     scale = P.scale
@@ -181,9 +189,12 @@ function ChainRulesCore.rrule(::typeof(*), P::ScaledPlan, x::AbstractArray)
     project_scale = ChainRulesCore.ProjectTo(scale)
     function mul_scaledplan_pullback(ȳ)
         x̄ = ChainRulesCore.@thunk(project_x(Pt * ȳ))
-        scale_tangent = ChainRulesCore.@thunk(project_scale(dot(y, ȳ) / conj(scale)))
+        scale_tangent = ChainRulesCore.@thunk(project_scale(AbstractFFTs.dot(y, ȳ) / conj(scale)))
         plan_tangent = ChainRulesCore.Tangent{typeof(P)}(;p=ChainRulesCore.NoTangent(), scale=scale_tangent)
         return ChainRulesCore.NoTangent(), plan_tangent, x̄ 
     end
     return y, mul_scaledplan_pullback
 end
+
+end # module
+
