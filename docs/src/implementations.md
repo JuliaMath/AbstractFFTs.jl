@@ -32,10 +32,10 @@ To define a new FFT implementation in your own module, you should
 
 * You can also define similar methods of `plan_rfft` and `plan_brfft` for real-input FFTs.
 
-* To enable automatic computation of adjoint plans via [`Base.adjoint`](@ref) (used in rules for reverse-mode differentiation), define the trait `AbstractFFTs.ProjectionStyle(::MyPlan)`, which can take values:
+* To enable automatic computation of adjoint plans via [`Base.adjoint`](@ref) (used in rules for reverse-mode differentiation), define the trait `AbstractFFTs.ProjectionStyle(::MyPlan)`, which can return:
     * `AbstractFFTs.NoProjectionStyle()`,
-    * `AbstractFFTs.RealProjectionStyle()`, for plans which halve one of the output's dimensions analogously to [`rfft`](@ref),
-    * `AbstractFFTs.RealInverseProjectionStyle(d::Int)`, for plans which expect an input with a halved dimension analogously to [`irfft`](@ref), where `d` is the original length of the dimension.
+    * `AbstractFFTs.RealProjectionStyle()`, for plans that halve one of the output's dimensions analogously to [`rfft`](@ref),
+    * `AbstractFFTs.RealInverseProjectionStyle(d::Int)`, for plans that expect an input with a halved dimension analogously to [`irfft`](@ref), where `d` is the original length of the dimension.
 
-The normalization convention for your FFT should be that it computes yₖ = ∑ⱼ xⱼ exp(-2πi jk/n) for a transform of
-length n, and the "backwards" (unnormalized inverse) transform computes the same thing but with exp(+2πi jk/n).
+The normalization convention for your FFT should be that it computes ``y_k = \sum_j x_j \exp(-2\pi i j k/n)`` for a transform of
+length ``n``, and the "backwards" (unnormalized inverse) transform computes the same thing but with ``\exp(+2\pi i jk/n)``.
