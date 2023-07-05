@@ -638,7 +638,7 @@ function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealProjectionStyle) where 
         [(i == 1 || (i == n && 2 * (i - 1)) == d) ? N : 2 * N for i in 1:n],
         ntuple(i -> i == halfdim ? n : 1, Val(ndims(x)))
     )
-    return p.p \ (x ./ scale)
+    return p.p \ (x ./ convert(typeof(x), scale))
 end
 
 function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealInverseProjectionStyle) where {T}
@@ -651,7 +651,7 @@ function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealInverseProjectionStyle)
         [(i == 1 || (i == n && 2 * (i - 1)) == d) ? 1 : 2 for i in 1:n],
         ntuple(i -> i == halfdim ? n : 1, Val(ndims(x)))
     )
-    return scale ./ N .* (p.p \ x)
+    return (convert(typeof(x), scale) ./ N) .* (p.p \ x)
 end
 
 # Analogously to ScaledPlan, define both plan_inv (for no caching) and inv (caches inner plan only).
