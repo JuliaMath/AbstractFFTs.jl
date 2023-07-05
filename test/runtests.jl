@@ -68,12 +68,26 @@ end
             @test fftdims(P) == dims
         end
 
+        # in-place plan
+        P = plan_fft!(x, dims)
+        @test eltype(P) === ComplexF64
+        xc64 = ComplexF64.(x)
+        @test P * xc64 ≈ fftw_fft
+        @test xc64 ≈ fftw_fft
+
         fftw_bfft = complex.(size(x, dims) .* x)
         @test AbstractFFTs.bfft(y, dims) ≈ fftw_bfft
         P = plan_bfft(x, dims)
         @test P * y ≈ fftw_bfft
         @test P \ (P * y) ≈ y
         @test fftdims(P) == dims
+
+        # in-place plan
+        P = plan_bfft!(x, dims)
+        @test eltype(P) === ComplexF64
+        yc64 = ComplexF64.(y)
+        @test P * yc64 ≈ fftw_bfft
+        @test yc64 ≈ fftw_bfft
 
         fftw_ifft = complex.(x)
         @test AbstractFFTs.ifft(y, dims) ≈ fftw_ifft
@@ -85,6 +99,13 @@ end
             @test P \ (P * y) ≈ y
             @test fftdims(P) == dims
         end
+
+        # in-place plan
+        P = plan_ifft!(x, dims)
+        @test eltype(P) === ComplexF64
+        yc64 = ComplexF64.(y)
+        @test P * yc64 ≈ fftw_ifft
+        @test yc64 ≈ fftw_ifft
 
         # real FFT
         fftw_rfft = fftw_fft[
@@ -361,7 +382,8 @@ end
         for x_shape in ((2,), (2, 3), (3, 4, 5))
             N = length(x_shape)
             x = randn(x_shape)
-            complex_x = randn(ComplexF64, x_shape) 
+            complex_x = randn(ComplexF64, x_shape)
+            Δ = (ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(), ChainRulesTestUtils.rand_tangent(complex_x))
             for dims in unique((1, 1:N, N))
                 # fft, ifft, bfft
                 for f in (fft, ifft, bfft)
@@ -370,11 +392,14 @@ end
                     test_frule(f, complex_x, dims)
                     test_rrule(f, complex_x, dims)
                 end
-                for pf in (plan_fft, plan_ifft, plan_bfft) 
+                for (pf, pf!) in ((plan_fft, plan_fft!), (plan_ifft, plan_ifft!), (plan_bfft, plan_bfft!)) 
                     test_frule(*, pf(x, dims), x)
                     test_rrule(*, pf(x, dims), x)
                     test_frule(*, pf(complex_x, dims), complex_x)
                     test_rrule(*, pf(complex_x, dims), complex_x)
+
+                    @test_throws ArgumentError ChainRulesCore.frule(Δ, *, pf!(complex_x, dims), complex_x)
+                    @test_throws ArgumentError ChainRulesCore.rrule(*, pf!(complex_x, dims), complex_x)
                 end
 
                 # rfft 
@@ -392,10 +417,10 @@ end
                         test_rrule(f, complex_x, d, dims)
                     end
                 end
-                for pf in (plan_irfft, plan_brfft) 
+                for pf in (plan_irfft, plan_brfft)
                     for d in (2 * size(x, first(dims)) - 1, 2 * size(x, first(dims)) - 2)
                         test_frule(*, pf(complex_x, d, dims), complex_x)
-                        test_rrule(*, pf(complex_x, d, dims), complex_x)
+                        test_rrule(*, pf(complex_x, d, dims), complex_x) 
                     end
                 end
             end

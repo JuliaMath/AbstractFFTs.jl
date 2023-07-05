@@ -232,3 +232,25 @@ function Base.:*(p::InverseTestRPlan, x::AbstractArray)
 
     return y
 end
+
+# In-place plans
+# (simple wrapper of out-of-place plans that does not support inverses)
+struct InplaceTestPlan{T,P<:Plan{T}} <: Plan{T}
+    plan::P
+end
+
+Base.size(p::InplaceTestPlan) = size(p.plan)
+Base.ndims(p::InplaceTestPlan) = ndims(p.plan)
+AbstractFFTs.ProjectionStyle(p::InplaceTestPlan) = AbstractFFTs.ProjectionStyle(p.plan)
+
+function AbstractFFTs.plan_fft!(x::AbstractArray, region; kwargs...)
+    return InplaceTestPlan(plan_fft(x, region; kwargs...))
+end
+function AbstractFFTs.plan_bfft!(x::AbstractArray, region; kwargs...)
+    return InplaceTestPlan(plan_bfft(x, region; kwargs...))
+end
+
+function LinearAlgebra.mul!(y::AbstractArray, p::InplaceTestPlan, x::AbstractArray)
+    return mul!(y, p.plan, x)
+end
+Base.:*(p::InplaceTestPlan, x::AbstractArray) = copyto!(x, p.plan * x)

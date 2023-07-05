@@ -161,12 +161,18 @@ end
 
 # plans
 function ChainRulesCore.frule((_, _, Δx), ::typeof(*), P::AbstractFFTs.Plan, x::AbstractArray) 
-    y = P * x 
+    y = P * x
+    if Base.mightalias(y, x)
+        throw(ArgumentError("differentiation rules are not supported for in-place plans"))
+    end
     Δy = P * Δx
     return y, Δy
 end
 function ChainRulesCore.rrule(::typeof(*), P::AbstractFFTs.Plan, x::AbstractArray)
     y = P * x
+    if Base.mightalias(y, x)
+        throw(ArgumentError("differentiation rules are not supported for in-place plans"))
+    end
     project_x = ChainRulesCore.ProjectTo(x)
     Pt = P'
     function mul_plan_pullback(ȳ)
@@ -178,11 +184,17 @@ end
 
 function ChainRulesCore.frule((_, ΔP, Δx), ::typeof(*), P::AbstractFFTs.ScaledPlan, x::AbstractArray) 
     y = P * x 
+    if Base.mightalias(y, x)
+        throw(ArgumentError("differentiation rules are not supported for in-place plans"))
+    end
     Δy = P * Δx .+ (ΔP.scale / P.scale) .* y
     return y, Δy
 end
 function ChainRulesCore.rrule(::typeof(*), P::AbstractFFTs.ScaledPlan, x::AbstractArray)
     y = P * x
+    if Base.mightalias(y, x)
+        throw(ArgumentError("differentiation rules are not supported for in-place plans"))
+    end
     Pt = P'
     scale = P.scale
     project_x = ChainRulesCore.ProjectTo(x)
