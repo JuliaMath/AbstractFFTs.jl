@@ -159,4 +159,54 @@ function ChainRulesCore.rrule(::typeof(ifftshift), x::AbstractArray, dims)
     return y, ifftshift_pullback
 end
 
+# plans
+function ChainRulesCore.frule((_, _, Δx), ::typeof(*), P::AbstractFFTs.Plan, x::AbstractArray) 
+    y = P * x
+    if Base.mightalias(y, x)
+        throw(ArgumentError("differentiation rules are not supported for in-place plans"))
+    end
+    Δy = P * Δx
+    return y, Δy
+end
+function ChainRulesCore.rrule(::typeof(*), P::AbstractFFTs.Plan, x::AbstractArray)
+    y = P * x
+    if Base.mightalias(y, x)
+        throw(ArgumentError("differentiation rules are not supported for in-place plans"))
+    end
+    project_x = ChainRulesCore.ProjectTo(x)
+    Pt = P'
+    function mul_plan_pullback(ȳ)
+        x̄ = project_x(Pt * ȳ)
+        return ChainRulesCore.NoTangent(), ChainRulesCore.NoTangent(), x̄
+    end
+    return y, mul_plan_pullback
+end
+
+function ChainRulesCore.frule((_, ΔP, Δx), ::typeof(*), P::AbstractFFTs.ScaledPlan, x::AbstractArray) 
+    y = P * x 
+    if Base.mightalias(y, x)
+        throw(ArgumentError("differentiation rules are not supported for in-place plans"))
+    end
+    Δy = P * Δx .+ (ΔP.scale / P.scale) .* y
+    return y, Δy
+end
+function ChainRulesCore.rrule(::typeof(*), P::AbstractFFTs.ScaledPlan, x::AbstractArray)
+    y = P * x
+    if Base.mightalias(y, x)
+        throw(ArgumentError("differentiation rules are not supported for in-place plans"))
+    end
+    Pt = P'
+    scale = P.scale
+    project_x = ChainRulesCore.ProjectTo(x)
+    project_scale = ChainRulesCore.ProjectTo(scale)
+    function mul_scaledplan_pullback(ȳ)
+        x̄ = ChainRulesCore.@thunk(project_x(Pt * ȳ))
+        scale_tangent = ChainRulesCore.@thunk(project_scale(AbstractFFTs.dot(y, ȳ) / conj(scale)))
+        plan_tangent = ChainRulesCore.Tangent{typeof(P)}(;p=ChainRulesCore.NoTangent(), scale=scale_tangent)
+        return ChainRulesCore.NoTangent(), plan_tangent, x̄ 
+    end
+    return y, mul_scaledplan_pullback
+end
+
 end # module
+
