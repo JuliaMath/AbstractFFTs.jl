@@ -55,7 +55,7 @@ const TEST_CASES = (
 function _adjoint_test(P, x; real_plan=false)
     y = rand(eltype(P * x), size(P * x))
     # test basic properties
-    @test_broken eltype(P') === typeof(y) # (AbstactFFTs.jl#110)
+    @test_broken eltype(P') === typeof(y) # (AbstractFFTs.jl#110)
     @test fftdims(P') == fftdims(P)
     @test (P')' === P # test adjoint of adjoint
     @test size(P') == AbstractFFTs.output_size(P) # test size of adjoint 
