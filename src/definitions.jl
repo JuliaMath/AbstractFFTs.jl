@@ -619,6 +619,7 @@ Base.adjoint(p::ScaledPlan) = ScaledPlan(p.p', p.scale)
 
 size(p::AdjointPlan) = output_size(p.p)
 output_size(p::AdjointPlan) = size(p.p)
+fftdims(p::AdjointPlan) = fftdims(p.p)
 
 Base.:*(p::AdjointPlan, x::AbstractArray) = _mul(p, x, ProjectionStyle(p.p))
 

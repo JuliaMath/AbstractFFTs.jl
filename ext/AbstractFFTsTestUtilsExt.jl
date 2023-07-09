@@ -51,6 +51,26 @@ const TEST_CASES = (
                              dims=3)),
         )
 
+# Perform generic adjoint plan tests 
+function _adjoint_test(P, x; real_plan=false)
+    y = rand(eltype(P * x), size(P * x))
+    # test basic properties
+    @test_broken eltype(P') === typeof(y) # (AbstactFFTs.jl#110)
+    @test fftdims(P') == fftdims(P)
+    @test (P')' === P # test adjoint of adjoint
+    @test size(P') == AbstractFFTs.output_size(P) # test size of adjoint 
+    # test correctness of adjoint and its inverse via the dot test
+    if !real_plan
+        @test dot(y, P * x) ≈ dot(P' * y, x)
+        @test dot(y, P \ x) ≈ dot(P' \ y, x) 
+    else
+        _component_dot(x, y) = dot(real.(x), real.(y)) + dot(imag.(x), imag.(y))
+        @test _component_dot(y, P * copy(x)) ≈ _component_dot(P' * copy(y), x)
+        @test _component_dot(x, P \ copy(y)) ≈ _component_dot(P' \ copy(x), y) 
+    end
+    @test_throws MethodError mul!(x, P', y)
+end
+
 """
     TestUtils.test_complex_fft(ArrayType=Array; test_real=true, test_inplace=true) 
 
@@ -63,8 +83,9 @@ The backend implementation is assumed to be loaded prior to calling this functio
   which the correctness tests are run. Arrays are constructed via
   `convert(ArrayType, ...)`.
 - `test_inplace=true`: whether to test in-place plans. 
+- `test_adjoint=true`: whether to test adjoints of plans. 
 """
-function TestUtils.test_complex_fft(ArrayType=Array; test_inplace=true) 
+function TestUtils.test_complex_fft(ArrayType=Array; test_inplace=true, test_adjoint=true) 
     @testset "correctness of fft, bfft, ifft" begin
         for test_case in TEST_CASES
             _x, dims, _x_fft = test_case.x, test_case.dims, test_case.x_fft
@@ -89,6 +110,9 @@ function TestUtils.test_complex_fft(ArrayType=Array; test_inplace=true)
                 _x_out = similar(x_fft)
                 @test mul!(_x_out, P, x_complexf) ≈ x_fft
                 @test _x_out ≈ x_fft
+                if test_adjoint
+                    _adjoint_test(P, x_complexf)
+                end
             end
             if test_inplace
                 # test IIP plans
@@ -120,6 +144,9 @@ function TestUtils.test_complex_fft(ArrayType=Array; test_inplace=true)
                 _x_complexf = similar(x_complexf)
                 @test mul!(_x_complexf, P, x_fft) ≈ x_scaled
                 @test _x_complexf ≈ x_scaled
+                if test_adjoint
+                    _adjoint_test(P, x_complexf)
+                end
             end
             # test IIP plans
             for P in (plan_bfft!(similar(x_fft), dims),)
@@ -148,6 +175,9 @@ function TestUtils.test_complex_fft(ArrayType=Array; test_inplace=true)
                 _x_complexf = similar(x_complexf)
                 @test mul!(_x_complexf, P, x_fft) ≈ x
                 @test _x_complexf ≈ x
+                if test_adjoint
+                    _adjoint_test(P, x_complexf)
+                end
             end
             # test IIP plans
             if test_inplace
@@ -177,10 +207,11 @@ The backend implementation is assumed to be loaded prior to calling this functio
   which the correctness tests are run. Arrays are constructed via
   `convert(ArrayType, ...)`.
 - `test_inplace=true`: whether to test in-place plans. 
+- `test_adjoint=true`: whether to test adjoints of plans. 
 """
-function TestUtils.test_real_fft(ArrayType=Array; test_inplace=true)
+function TestUtils.test_real_fft(ArrayType=Array; test_inplace=true, test_adjoint=true)
     @testset "correctness of rfft, brfft, irfft" begin
-        for test_case in TEST_CASES[5:5]
+        for test_case in TEST_CASES
             _x, dims, _x_fft = test_case.x, test_case.dims, test_case.x_fft
             x = convert(ArrayType, _x) # dummy array that will be passed to plans
             x_real = float.(x) # for testing mutating real FFTs
@@ -202,6 +233,9 @@ function TestUtils.test_real_fft(ArrayType=Array; test_inplace=true)
                 _x_rfft = similar(x_rfft)
                 @test mul!(_x_rfft, P, copy(x_real)) ≈ x_rfft
                 @test _x_rfft ≈ x_rfft
+                if test_adjoint
+                    _adjoint_test(P, x_real; real_plan=true)
+                end
             end
 
             # BRFFT
