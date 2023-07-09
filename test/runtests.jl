@@ -4,6 +4,8 @@ using AbstractFFTs
 using ChainRulesTestUtils
 import Unitful
 using LinearAlgebra
+using ChainRulesCore
+using FiniteDifferences
 
 Random.seed!(1234)
 
