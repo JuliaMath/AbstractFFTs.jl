@@ -51,8 +51,7 @@ const TEST_CASES = (
                              dims=3)),
         )
 
-# Perform generic adjoint plan tests 
-function _adjoint_test(P, x; real_plan=false)
+function TestUtils.test_plan_adjoint(P::AbstractFFTs.Plan, x::AbstractArray; real_plan=false)
     y = rand(eltype(P * x), size(P * x))
     # test basic properties
     @test_broken eltype(P') === typeof(y) # (AbstractFFTs.jl#110)
@@ -71,20 +70,6 @@ function _adjoint_test(P, x; real_plan=false)
     @test_throws MethodError mul!(x, P', y)
 end
 
-"""
-    TestUtils.test_complex_fft(ArrayType=Array; test_real=true, test_inplace=true) 
-
-Run tests to verify correctness of FFT/BFFT/IFFT functionality using a particular backend plan implementation. 
-The backend implementation is assumed to be loaded prior to calling this function.
-
-# Arguments
-
-- `ArrayType`: determines the `AbstractArray` implementation for
-  which the correctness tests are run. Arrays are constructed via
-  `convert(ArrayType, ...)`.
-- `test_inplace=true`: whether to test in-place plans. 
-- `test_adjoint=true`: whether to test adjoints of plans. 
-"""
 function TestUtils.test_complex_fft(ArrayType=Array; test_inplace=true, test_adjoint=true) 
     @testset "correctness of fft, bfft, ifft" begin
         for test_case in TEST_CASES
@@ -111,7 +96,7 @@ function TestUtils.test_complex_fft(ArrayType=Array; test_inplace=true, test_adj
                 @test mul!(_x_out, P, x_complexf) ≈ x_fft
                 @test _x_out ≈ x_fft
                 if test_adjoint
-                    _adjoint_test(P, x_complexf)
+                    TestUtils.test_plan_adjoint(P, x_complexf)
                 end
             end
             if test_inplace
@@ -145,7 +130,7 @@ function TestUtils.test_complex_fft(ArrayType=Array; test_inplace=true, test_adj
                 @test mul!(_x_complexf, P, x_fft) ≈ x_scaled
                 @test _x_complexf ≈ x_scaled
                 if test_adjoint
-                    _adjoint_test(P, x_complexf)
+                    TestUtils.test_plan_adjoint(P, x_complexf)
                 end
             end
             # test IIP plans
@@ -176,7 +161,7 @@ function TestUtils.test_complex_fft(ArrayType=Array; test_inplace=true, test_adj
                 @test mul!(_x_complexf, P, x_fft) ≈ x
                 @test _x_complexf ≈ x
                 if test_adjoint
-                    _adjoint_test(P, x_complexf)
+                    TestUtils.test_plan_adjoint(P, x_complexf)
                 end
             end
             # test IIP plans
@@ -195,20 +180,6 @@ function TestUtils.test_complex_fft(ArrayType=Array; test_inplace=true, test_adj
     end
 end
 
-"""
-    TestUtils.test_real_fft(ArrayType=Array; test_real=true, test_inplace=true)
-
-Run tests to verify correctness of RFFT/BRFFT/IRFFT functionality using a particular backend plan implementation. 
-The backend implementation is assumed to be loaded prior to calling this function.
-
-# Arguments
-
-- `ArrayType`: determines the `AbstractArray` implementation for
-  which the correctness tests are run. Arrays are constructed via
-  `convert(ArrayType, ...)`.
-- `test_inplace=true`: whether to test in-place plans. 
-- `test_adjoint=true`: whether to test adjoints of plans. 
-"""
 function TestUtils.test_real_fft(ArrayType=Array; test_inplace=true, test_adjoint=true)
     @testset "correctness of rfft, brfft, irfft" begin
         for test_case in TEST_CASES
@@ -234,7 +205,7 @@ function TestUtils.test_real_fft(ArrayType=Array; test_inplace=true, test_adjoin
                 @test mul!(_x_rfft, P, copy(x_real)) ≈ x_rfft
                 @test _x_rfft ≈ x_rfft
                 if test_adjoint
-                    _adjoint_test(P, x_real; real_plan=true)
+                    TestUtils.test_plan_adjoint(P, x_real; real_plan=true)
                 end
             end
 

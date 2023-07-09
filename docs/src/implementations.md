@@ -39,3 +39,13 @@ To define a new FFT implementation in your own module, you should
 
 The normalization convention for your FFT should be that it computes ``y_k = \sum_j x_j \exp(-2\pi i j k/n)`` for a transform of
 length ``n``, and the "backwards" (unnormalized inverse) transform computes the same thing but with ``\exp(+2\pi i jk/n)``.
+
+## Testing implementations
+
+`AbstractFFTs.jl` provides a `TestUtils` module to help with testing downstream implementations.
+
+```@docs
+AbstractFFTs.TestUtils.test_complex_fft
+AbstractFFTs.TestUtils.test_real_fft
+AbstractFFTs.TestUtils.test_plan_adjoint
+```
