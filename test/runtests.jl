@@ -1,20 +1,18 @@
-# This file contains code that was formerly part of Julia. License is MIT: https://julialang.org/license
-
-using AbstractFFTs
-using AbstractFFTs: Plan, ScaledPlan
-using ChainRulesTestUtils
-using FiniteDifferences
-import ChainRulesCore
-
-using LinearAlgebra
 using Random
 using Test
-
+using AbstractFFTs
+using ChainRulesTestUtils
 import Unitful
+using LinearAlgebra
 
 Random.seed!(1234)
 
-include("testplans.jl")
+# Load example plan implementation.
+include("TestPlans.jl")
+
+# Run interface tests for TestPlans 
+AbstractFFTs.TestUtils.test_complex_fft(Array)
+AbstractFFTs.TestUtils.test_real_fft(Array)
 
 @testset "rfft sizes" begin
     A = rand(11, 10)
@@ -24,124 +22,6 @@ include("testplans.jl")
     @test @inferred(AbstractFFTs.brfft_output_size(A1, 11, 1)) == (11, 10)
     @test @inferred(AbstractFFTs.brfft_output_size(A2, 10, 2)) == (11, 10)
     @test_throws AssertionError AbstractFFTs.brfft_output_size(A1, 10, 2)
-end
-
-@testset "Custom Plan" begin
-    # DFT along last dimension, results computed using FFTW
-    for (x, fftw_fft) in (
-        (collect(1:7),
-         [28.0 + 0.0im,
-          -3.5 + 7.267824888003178im,
-          -3.5 + 2.7911568610884143im,
-          -3.5 + 0.7988521603655248im,
-          -3.5 - 0.7988521603655248im,
-          -3.5 - 2.7911568610884143im,
-          -3.5 - 7.267824888003178im]),
-        (collect(1:8),
-         [36.0 + 0.0im,
-          -4.0 + 9.65685424949238im,
-          -4.0 + 4.0im,
-          -4.0 + 1.6568542494923806im,
-          -4.0 + 0.0im,
-          -4.0 - 1.6568542494923806im,
-          -4.0 - 4.0im,
-          -4.0 - 9.65685424949238im]),
-        (collect(reshape(1:8, 2, 4)),
-         [16.0+0.0im  -4.0+4.0im  -4.0+0.0im  -4.0-4.0im;
-          20.0+0.0im  -4.0+4.0im  -4.0+0.0im  -4.0-4.0im]),
-        (collect(reshape(1:9, 3, 3)),
-         [12.0+0.0im  -4.5+2.598076211353316im  -4.5-2.598076211353316im;
-          15.0+0.0im  -4.5+2.598076211353316im  -4.5-2.598076211353316im;
-          18.0+0.0im  -4.5+2.598076211353316im  -4.5-2.598076211353316im]),
-    )
-        # FFT
-        dims = ndims(x)
-        y = AbstractFFTs.fft(x, dims)
-        @test y ≈ fftw_fft
-        # test plan_fft and also inv and plan_inv of plan_ifft, which should all give 
-        # functionally identical plans
-        for P in [plan_fft(x, dims), inv(plan_ifft(x, dims)), 
-                  AbstractFFTs.plan_inv(plan_ifft(x, dims))]
-            @test eltype(P) === ComplexF64
-            @test P * x ≈ fftw_fft
-            @test P \ (P * x) ≈ x
-            @test fftdims(P) == dims
-        end
-
-        # in-place plan
-        P = plan_fft!(x, dims)
-        @test eltype(P) === ComplexF64
-        xc64 = ComplexF64.(x)
-        @test P * xc64 ≈ fftw_fft
-        @test xc64 ≈ fftw_fft
-
-        fftw_bfft = complex.(size(x, dims) .* x)
-        @test AbstractFFTs.bfft(y, dims) ≈ fftw_bfft
-        P = plan_bfft(x, dims)
-        @test P * y ≈ fftw_bfft
-        @test P \ (P * y) ≈ y
-        @test fftdims(P) == dims
-
-        # in-place plan
-        P = plan_bfft!(x, dims)
-        @test eltype(P) === ComplexF64
-        yc64 = ComplexF64.(y)
-        @test P * yc64 ≈ fftw_bfft
-        @test yc64 ≈ fftw_bfft
-
-        fftw_ifft = complex.(x)
-        @test AbstractFFTs.ifft(y, dims) ≈ fftw_ifft
-        # test plan_ifft and also inv and plan_inv of plan_fft, which should all give 
-        # functionally identical plans
-        for P in [plan_ifft(x, dims), inv(plan_fft(x, dims)), 
-                  AbstractFFTs.plan_inv(plan_fft(x, dims))]
-            @test P * y ≈ fftw_ifft
-            @test P \ (P * y) ≈ y
-            @test fftdims(P) == dims
-        end
-
-        # in-place plan
-        P = plan_ifft!(x, dims)
-        @test eltype(P) === ComplexF64
-        yc64 = ComplexF64.(y)
-        @test P * yc64 ≈ fftw_ifft
-        @test yc64 ≈ fftw_ifft
-
-        # real FFT
-        fftw_rfft = fftw_fft[
-            (Colon() for _ in 1:(ndims(fftw_fft) - 1))...,
-            1:(size(fftw_fft, ndims(fftw_fft)) ÷ 2 + 1)
-        ]
-        ry = AbstractFFTs.rfft(x, dims)
-        @test ry ≈ fftw_rfft
-        # test plan_rfft and also inv and plan_inv of plan_irfft, which should all give 
-        # functionally identical plans
-        for P in [plan_rfft(x, dims), inv(plan_irfft(ry, size(x, dims), dims)), 
-                  AbstractFFTs.plan_inv(plan_irfft(ry, size(x, dims), dims))]
-            @test eltype(P) <: Real
-            @test P * x ≈ fftw_rfft
-            @test P \ (P * x) ≈ x
-            @test fftdims(P) == dims
-        end
-
-        fftw_brfft = complex.(size(x, dims) .* x)
-        @test AbstractFFTs.brfft(ry, size(x, dims), dims) ≈ fftw_brfft
-        P = plan_brfft(ry, size(x, dims), dims)
-        @test P * ry ≈ fftw_brfft
-        @test P \ (P * ry) ≈ ry
-        @test fftdims(P) == dims
-
-        fftw_irfft = complex.(x)
-        @test AbstractFFTs.irfft(ry, size(x, dims), dims) ≈ fftw_irfft
-        # test plan_rfft and also inv and plan_inv of plan_irfft, which should all give 
-        # functionally identical plans
-        for P in [plan_irfft(ry, size(x, dims), dims), inv(plan_rfft(x, dims)), 
-                  AbstractFFTs.plan_inv(plan_rfft(x, dims))]
-            @test P * ry ≈ fftw_irfft
-            @test P \ (P * ry) ≈ ry
-            @test fftdims(P) == dims
-        end
-    end
 end
 
 @testset "Shift functions" begin
@@ -232,7 +112,7 @@ end
     # normalization should be inferable even if region is only inferred as ::Any,
     # need to wrap in another function to test this (note that p.region::Any for
     # p::TestPlan)
-    f9(p::Plan{T}, sz) where {T} = AbstractFFTs.normalization(real(T), sz, fftdims(p))
+    f9(p::AbstractFFTs.Plan{T}, sz) where {T} = AbstractFFTs.normalization(real(T), sz, fftdims(p))
     @test @inferred(f9(plan_fft(zeros(10), 1), 10)) == 1/10
 end
 
@@ -427,3 +307,4 @@ end
         end
     end
 end
+            
