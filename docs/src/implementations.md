@@ -43,9 +43,13 @@ length ``n``, and the "backwards" (unnormalized inverse) transform computes the 
 ## Testing implementations
 
 `AbstractFFTs.jl` provides a `TestUtils` module to help with testing downstream implementations.
-
+The following functions test that all FFT functionality has been correctly implemented:
 ```@docs
-AbstractFFTs.TestUtils.test_complex_fft
-AbstractFFTs.TestUtils.test_real_fft
+AbstractFFTs.TestUtils.test_complex_ffts
+AbstractFFTs.TestUtils.test_real_ffts
+```
+`TestUtils` also exposes lower level functions for generically testing particular plans:
+```@docs
+AbstractFFTs.TestUtils.test_plan
 AbstractFFTs.TestUtils.test_plan_adjoint
 ```

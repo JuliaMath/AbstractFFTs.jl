@@ -13,8 +13,8 @@ Random.seed!(1234)
 include("TestPlans.jl")
 
 # Run interface tests for TestPlans 
-AbstractFFTs.TestUtils.test_complex_fft(Array)
-AbstractFFTs.TestUtils.test_real_fft(Array)
+AbstractFFTs.TestUtils.test_complex_ffts(Array)
+AbstractFFTs.TestUtils.test_real_ffts(Array)
 
 @testset "rfft sizes" begin
     A = rand(11, 10)
