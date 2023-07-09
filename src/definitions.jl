@@ -583,12 +583,30 @@ plan_brfft
 
 ##############################################################################
 
-struct NoProjectionStyle end
-struct RealProjectionStyle end 
-struct RealInverseProjectionStyle 
+abstract type ProjectionStyle end
+
+"""
+    NoProjectionStyle()
+
+Projection style for complex to complex discrete Fourier transform
+"""
+struct NoProjectionStyle <: ProjectionStyle end
+
+"""
+    RealProjectionStyle()
+
+Projection style for complex to real discrete Fourier transform
+"""
+struct RealProjectionStyle <: ProjectionStyle end 
+
+"""
+    RealInverseProjectionStyle()
+
+Projection style for inverse of complex to real discrete Fourier transform
+"""
+struct RealInverseProjectionStyle <: ProjectionStyle
     dim::Int
 end
-const ProjectionStyle = Union{NoProjectionStyle, RealProjectionStyle, RealInverseProjectionStyle}
 
 output_size(p::Plan) = _output_size(p, ProjectionStyle(p))
 _output_size(p::Plan, ::NoProjectionStyle) = size(p)
