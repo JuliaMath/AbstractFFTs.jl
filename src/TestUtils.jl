@@ -1,7 +1,7 @@
 module TestUtils
 
 """
-    TestUtils.test_complex_ffts(ArrayType=Array; test_adjoint=true, test_inplace=true) 
+    TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_adjoint=true) 
 
 Run tests to verify correctness of FFT, BFFT, and IFFT functionality using a particular backend plan implementation. 
 The backend implementation is assumed to be loaded prior to calling this function.
