@@ -249,7 +249,7 @@ end
 
     @testset "fft" begin
         # Overloads to allow ChainRulesTestUtils to test rules w.r.t. ScaledPlan's. See https://github.com/JuliaDiff/ChainRulesTestUtils.jl/issues/256
-        InnerPlan = Union{TestPlan, InverseTestPlan, TestRPlan, InverseTestRPlan}
+        InnerPlan = Union{TestPlans.TestPlan, TestPlans.InverseTestPlan, TestPlans.TestRPlan, TestPlans.InverseTestRPlan}
         function FiniteDifferences.to_vec(x::InnerPlan)
             function FFTPlan_from_vec(x_vec::Vector)
                 return x
