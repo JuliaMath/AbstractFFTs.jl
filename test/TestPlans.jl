@@ -272,9 +272,6 @@ function AbstractFFTs.plan_bfft!(x::AbstractArray, region; kwargs...)
     return InplaceTestPlan(plan_bfft(x, region; kwargs...))
 end
 
-function LinearAlgebra.mul!(y::AbstractArray, p::InplaceTestPlan, x::AbstractArray)
-    return copyto!(y, p.plan * x)
-end
 Base.:*(p::InplaceTestPlan, x::AbstractArray) = copyto!(x, p.plan * x)
 
 AbstractFFTs.plan_inv(p::InplaceTestPlan) = InplaceTestPlan(AbstractFFTs.plan_inv(p.plan))
