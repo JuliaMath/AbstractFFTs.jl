@@ -103,9 +103,10 @@ function TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_ad
                 @test fft!(_x_complexf, dims) ≈ x_fft
                 @test _x_complexf ≈ x_fft
             end
-            # test OOP plans, checking plan_fft and also inv of plan_ifft, 
+            # test OOP plans, checking plan_fft and also inv and plan_inv of plan_ifft, 
             # which should give functionally identical plans
-            for P in (plan_fft(similar(x_complexf), dims), inv(plan_ifft(similar(x_complexf), dims)))
+            for P in (plan_fft(similar(x_complexf), dims), 
+                      (_inv(plan_ifft(similar(x_complexf), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                 @test eltype(P) <: Complex
                 @test fftdims(P) == dims
                 TestUtils.test_plan(P, x_complexf, x_fft)
@@ -116,7 +117,8 @@ function TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_ad
             end
             if test_inplace
                 # test IIP plans
-                for P in (plan_fft!(similar(x_complexf), dims), inv(plan_ifft!(similar(x_complexf), dims)))
+                for P in (plan_fft!(similar(x_complexf), dims), 
+                          (_inv(plan_ifft!(similar(x_complexf), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                     TestUtils.test_plan(P, x_complexf, x_fft; inplace_plan=true)
                 end
             end
@@ -153,7 +155,8 @@ function TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_ad
                 @test _x_fft ≈ x
             end
             # test OOP plans
-            for P in (plan_ifft(similar(x_complexf), dims), inv(plan_fft(similar(x_complexf), dims)))
+            for P in (plan_ifft(similar(x_complexf), dims), 
+                      (_inv(plan_fft(similar(x_complexf), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                 @test eltype(P) <: Complex
                 @test fftdims(P) == dims
                 TestUtils.test_plan(P, x_fft, x)
@@ -163,7 +166,8 @@ function TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_ad
             end
             # test IIP plans
             if test_inplace
-                for P in (plan_ifft!(similar(x_complexf), dims), inv(plan_fft!(similar(x_complexf), dims)))
+                for P in (plan_ifft!(similar(x_complexf), dims), 
+                          (_inv(plan_fft!(similar(x_complexf), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                     @test eltype(P) <: Complex
                     @test fftdims(P) == dims
                     TestUtils.test_plan(P, x_fft, x; inplace_plan=true)
@@ -188,7 +192,8 @@ function TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input
 
             # RFFT
             @test rfft(x, dims) ≈ x_rfft
-            for P in (plan_rfft(similar(x_real), dims), inv(plan_irfft(similar(x_rfft), size(x, first(dims)), dims)))
+            for P in (plan_rfft(similar(x_real), dims), 
+                      (_inv(plan_irfft(similar(x_rfft), size(x, first(dims)), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                 @test eltype(P) <: Real
                 @test fftdims(P) == dims
                 TestUtils.test_plan(P, x_real, x_rfft; copy_input=copy_input)
@@ -208,7 +213,8 @@ function TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input
 
             # IRFFT
             @test irfft(x_rfft, size(x, first(dims)), dims) ≈ x
-            for P in (plan_irfft(similar(x_rfft), size(x, first(dims)), dims), inv(plan_rfft(similar(x_real), dims)))
+            for P in (plan_irfft(similar(x_rfft), size(x, first(dims)), dims), 
+                      (_inv(plan_rfft(similar(x_real), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                 @test eltype(P) <: Complex
                 @test fftdims(P) == dims
                 TestUtils.test_plan(P, x_rfft, x; copy_input=copy_input)
