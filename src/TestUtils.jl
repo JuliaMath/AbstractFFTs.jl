@@ -58,8 +58,8 @@ we allow specifying `copy_input=true` to allow for this behaviour in tests by co
 """
 function test_plan_adjoint end
 
-function __init__()
-    if isdefined(Base, :get_extension) && isdefined(Base.Experimental, :register_error_hint)
+if isdefined(Base, :get_extension) && isdefined(Base.Experimental, :register_error_hint)
+    function __init__()
         # Better error message if users forget to load Test
         Base.Experimental.register_error_hint(MethodError) do io, exc, _, _
             if (exc.f === test_real_fft || exc.f === test_complex_fft) && Base.get_extension(AbstractFFTs, :AbstractFFTsTestExt) === nothing
