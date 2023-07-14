@@ -608,7 +608,7 @@ Form the adjoint operator of an FFT plan. Returns a plan that performs the adjoi
 the original plan. Note that this differs from the corresponding backwards plan in the case of real
 FFTs due to the halving of one of the dimensions of the FFT output, as described in [`rfft`](@ref).
 
-!!! warning 
+!!! warning
     Adjoint plans do not currently support `LinearAlgebra.mul!`. Further, as a new addition to `AbstractFFTs`, 
     coverage of `Base.adjoint` in downstream implementations may be limited. 
 """
