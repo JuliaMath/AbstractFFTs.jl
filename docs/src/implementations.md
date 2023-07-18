@@ -42,7 +42,8 @@ length ``n``, and the "backwards" (unnormalized inverse) transform computes the 
 
 ## Testing implementations
 
-`AbstractFFTs.jl` provides a `TestUtils` module to help with testing downstream implementations.
+`AbstractFFTs.jl` provides an experimental `TestUtils` module to help with testing downstream implementations,
+available as a [weak extension](https://pkgdocs.julialang.org/v1.9/creating-packages/#Conditional-loading-of-code-in-packages-(Extensions)) of `Test`.
 The following functions test that all FFT functionality has been correctly implemented:
 ```@docs
 AbstractFFTs.TestUtils.test_complex_ffts
