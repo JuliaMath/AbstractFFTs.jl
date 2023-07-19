@@ -62,7 +62,8 @@ if isdefined(Base, :get_extension) && isdefined(Base.Experimental, :register_err
     function __init__()
         # Better error message if users forget to load Test
         Base.Experimental.register_error_hint(MethodError) do io, exc, _, _
-            if (exc.f === test_real_fft || exc.f === test_complex_fft) && Base.get_extension(AbstractFFTs, :AbstractFFTsTestExt) === nothing
+            if any(f -> (f === exc.f), (test_real_ffts, test_complex_ffts, test_plan, test_plan_adjoint)) &&
+                (Base.get_extension(AbstractFFTs, :AbstractFFTsTestExt) === nothing)
                 print(io, "\nDid you forget to load Test?")
             end
         end
