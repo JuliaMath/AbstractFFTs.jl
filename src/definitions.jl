@@ -588,8 +588,9 @@ abstract type AdjointStyle end
 """
     FFTAdjointStyle()
 
-Projection style for complex to complex discrete Fourier transforms. 
-    
+Projection style for complex to complex discrete Fourier transforms that normalize 
+the output analogously to [`fft`](@ref).
+
 Since the Fourier transform is unitary up to a scaling, the adjoint simply applies 
 the transform's inverse with an appropriate scaling.
 """
@@ -598,8 +599,8 @@ struct FFTAdjointStyle <: AdjointStyle end
 """
     RFFTAdjointStyle()
 
-Projection style for real to complex discrete Fourier transforms, for plans that 
-halve one of the output's dimensions analogously to [`rfft`](@ref).
+Projection style for real to complex discrete Fourier transforms that halve
+one of the output's dimensions and normalize the output analogously to [`rfft`](@ref).
     
 Since the Fourier transform is unitary up to a scaling, the adjoint applies the transform's 
 inverse, but with additional logic to handle the fact that the output is projected 
@@ -610,9 +611,9 @@ struct RFFTAdjointStyle <: AdjointStyle end
 """
     IRFFTAdjointStyle(d::Dim)
 
-Projection style for complex to real discrete Fourier transforms, for plans that 
-expect an input with a halved dimension analogously to [`irfft`](@ref), where `d` 
-is the original length of the dimension.
+Projection style for complex to real discrete Fourier transforms that expect
+an input with a halved dimension and normalize the output analogously to [`irfft`](@ref), 
+where `d` is the original length of the dimension.
     
 Since the Fourier transform is unitary up to a scaling, the adjoint applies the transform's 
 inverse, but with additional logic to handle the fact that the input is projected 
