@@ -209,6 +209,9 @@ function TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input
                 @test eltype(P) <: Complex
                 @test fftdims(P) == dims
                 TestUtils.test_plan(P, x_rfft, x_scaled; copy_input=copy_input)
+                if test_adjoint
+                    TestUtils.test_plan_adjoint(P, x_rfft; real_plan=true, copy_input=copy_input)
+                end
             end
 
             # IRFFT
@@ -218,6 +221,9 @@ function TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input
                 @test eltype(P) <: Complex
                 @test fftdims(P) == dims
                 TestUtils.test_plan(P, x_rfft, x; copy_input=copy_input)
+                if test_adjoint
+                    TestUtils.test_plan_adjoint(P, x_rfft; real_plan=true, copy_input=copy_input)
+                end
             end
         end
     end
