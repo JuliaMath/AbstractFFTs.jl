@@ -184,7 +184,7 @@ function TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input
             x = convert(ArrayType, _x) # dummy array that will be passed to plans
             x_real = float.(x) # for testing mutating real FFTs
             x_fft = convert(ArrayType, _x_fft)
-            x_rfft = selectdim(x_fft, first(dims), 1:(size(x_fft, first(dims)) ÷ 2 + 1))
+            x_rfft = collect(selectdim(x_fft, first(dims), 1:(size(x_fft, first(dims)) ÷ 2 + 1)))
 
             if !(eltype(x) <: Real)
                 continue
