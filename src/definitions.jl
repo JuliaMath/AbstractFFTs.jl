@@ -610,8 +610,8 @@ Adjoint style for real to complex discrete Fourier transforms that halve one of
 the output's dimensions and normalize the output analogously to [`rfft`](@ref).
     
 Since the Fourier transform is unitary up to a scaling, the adjoint applies the transform's 
-inverse, but with additional logic to handle the fact that the output is projected 
-to exploit its conjugate symmetry (see [`rfft`](@ref)). 
+inverse, but with appropriate scaling and additional logic to handle the fact that the
+output is projected to exploit its conjugate symmetry (see [`rfft`](@ref)).
 """
 struct RFFTAdjointStyle <: AdjointStyle end 
 
@@ -623,8 +623,8 @@ with a halved dimension and normalize the output analogously to [`irfft`](@ref),
 where `d` is the original length of the dimension.
     
 Since the Fourier transform is unitary up to a scaling, the adjoint applies the transform's 
-inverse, but with additional logic to handle the fact that the input is projected 
-to exploit its conjugate symmetry (see [`irfft`](@ref)). 
+inverse, but with appropriate scaling and additional logic to handle the fact that the
+input is projected to exploit its conjugate symmetry (see [`irfft`](@ref)). 
 """
 struct IRFFTAdjointStyle <: AdjointStyle
     dim::Int
