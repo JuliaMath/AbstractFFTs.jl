@@ -18,7 +18,8 @@ To define a new FFT implementation in your own module, you should
   inverse plan.
 
 * Define a new method `AbstractFFTs.plan_fft(x, region; kws...)` that returns a `MyPlan` for at least some types of
-  `x` and some set of dimensions `region`.   The `region` (or a copy thereof) should be accessible via `fftdims(p::MyPlan)` (which defaults to `p.region`).
+  `x` and some set of dimensions `region`.   The `region` (or a copy thereof) should be accessible via `fftdims(p::MyPlan)`
+   (which defaults to `p.region`), and the input size `size(x)` should be accessible via `size(p::MyPlan)`.
 
 * Define a method of `LinearAlgebra.mul!(y, p::MyPlan, x)` that computes the transform `p` of `x` and stores the result in `y`.
 
