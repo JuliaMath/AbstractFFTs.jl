@@ -10,9 +10,12 @@ abstract type Plan{T} end
 
 eltype(::Type{<:Plan{T}}) where {T} = T
 
-# size(p) should return the size of the input array for p
-size(p::Plan, d) = size(p)[d]
-output_size(p::Plan, d) = output_size(p)[d]
+"""
+    size(p::Plan, [dim])
+
+Return the size of the input of a plan `p`, optionally at a specified dimenion `dim`.
+"""
+size(p::Plan, dim) = size(p)[dim]
 ndims(p::Plan) = length(size(p))
 length(p::Plan) = prod(size(p))::Int
 
@@ -638,13 +641,14 @@ Adjoint style for unitary transforms, whose adjoint equals their inverse.
 struct UnitaryAdjointStyle <: AdjointStyle end
 
 """
-    output_size(p::Plan)
+    output_size(p::Plan, [dim])
 
-Return the size of the output of a plan `p`.
+Return the size of the output of a plan `p`, optionally at a specified dimension `dim`.
 
 Implementations of a new adjoint style `AS <: AbstractFFTs.AdjointStyle` should define `output_size(::Plan, ::AS)`.
 """
 output_size(p::Plan) = output_size(p, AdjointStyle(p))
+output_size(p::Plan, dim) = output_size(p)[dim]
 output_size(p::Plan, ::FFTAdjointStyle) = size(p)
 output_size(p::Plan, ::RFFTAdjointStyle) = rfft_output_size(size(p), fftdims(p))
 output_size(p::Plan, s::IRFFTAdjointStyle) = brfft_output_size(size(p), s.dim, fftdims(p))
@@ -670,11 +674,6 @@ Base.adjoint(p::AdjointPlan) = p.p
 # always have AdjointPlan inside ScaledPlan.
 Base.adjoint(p::ScaledPlan) = ScaledPlan(p.p', p.scale)
 
-"""
-    size(p::Plan)
-
-Return the size of the input of a plan `p`.
-"""
 size(p::AdjointPlan) = output_size(p.p)
 output_size(p::AdjointPlan) = size(p.p)
 
