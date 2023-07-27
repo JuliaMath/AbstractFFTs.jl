@@ -27,8 +27,8 @@ Base.ndims(::TestPlan{T,N}) where {T,N} = N
 Base.size(p::InverseTestPlan) = p.sz
 Base.ndims(::InverseTestPlan{T,N}) where {T,N} = N
 
-AbstractFFTs.ProjectionStyle(::TestPlan) = AbstractFFTs.NoProjectionStyle()
-AbstractFFTs.ProjectionStyle(::InverseTestPlan) = AbstractFFTs.NoProjectionStyle()
+AbstractFFTs.AdjointStyle(::TestPlan) = AbstractFFTs.FFTAdjointStyle()
+AbstractFFTs.AdjointStyle(::InverseTestPlan) = AbstractFFTs.FFTAdjointStyle()
 
 function AbstractFFTs.plan_fft(x::AbstractArray{T}, region; kwargs...) where {T}
     return TestPlan{T}(region, size(x))
@@ -116,8 +116,8 @@ mutable struct InverseTestRPlan{T,N,G} <: Plan{Complex{T}}
     end
 end
 
-AbstractFFTs.ProjectionStyle(::TestRPlan) = AbstractFFTs.RealProjectionStyle()
-AbstractFFTs.ProjectionStyle(p::InverseTestRPlan) = AbstractFFTs.RealInverseProjectionStyle(p.d)
+AbstractFFTs.AdjointStyle(::TestRPlan) = AbstractFFTs.RFFTAdjointStyle()
+AbstractFFTs.AdjointStyle(p::InverseTestRPlan) = AbstractFFTs.IRFFTAdjointStyle(p.d)
 
 function AbstractFFTs.plan_rfft(x::AbstractArray{T}, region; kwargs...) where {T<:Real}
     return TestRPlan{T}(region, size(x))
@@ -263,7 +263,7 @@ end
 Base.size(p::InplaceTestPlan) = size(p.plan)
 Base.ndims(p::InplaceTestPlan) = ndims(p.plan)
 AbstractFFTs.fftdims(p::InplaceTestPlan) = fftdims(p.plan)
-AbstractFFTs.ProjectionStyle(p::InplaceTestPlan) = AbstractFFTs.ProjectionStyle(p.plan)
+AbstractFFTs.AdjointStyle(p::InplaceTestPlan) = AbstractFFTs.AdjointStyle(p.plan)
 
 function AbstractFFTs.plan_fft!(x::AbstractArray, region; kwargs...)
     return InplaceTestPlan(plan_fft(x, region; kwargs...))
