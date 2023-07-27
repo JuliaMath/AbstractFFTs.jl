@@ -18,7 +18,8 @@ To define a new FFT implementation in your own module, you should
   inverse plan.
 
 * Define a new method `AbstractFFTs.plan_fft(x, region; kws...)` that returns a `MyPlan` for at least some types of
-  `x` and some set of dimensions `region`.   The `region` (or a copy thereof) should be accessible via `fftdims(p::MyPlan)` (which defaults to `p.region`).
+  `x` and some set of dimensions `region`.   The `region` (or a copy thereof) should be accessible via `fftdims(p::MyPlan)`
+   (which defaults to `p.region`), and the input size `size(x)` should be accessible via `size(p::MyPlan)`.
 
 * Define a method of `LinearAlgebra.mul!(y, p::MyPlan, x)` that computes the transform `p` of `x` and stores the result in `y`.
 
@@ -32,10 +33,9 @@ To define a new FFT implementation in your own module, you should
 
 * You can also define similar methods of `plan_rfft` and `plan_brfft` for real-input FFTs.
 
-* To enable automatic computation of adjoint plans via [`Base.adjoint`](@ref) (used in rules for reverse-mode differentiation), define the trait `AbstractFFTs.ProjectionStyle(::MyPlan)`, which can return:
-    * `AbstractFFTs.NoProjectionStyle()`,
-    * `AbstractFFTs.RealProjectionStyle()`, for plans that halve one of the output's dimensions analogously to [`rfft`](@ref),
-    * `AbstractFFTs.RealInverseProjectionStyle(d::Int)`, for plans that expect an input with a halved dimension analogously to [`irfft`](@ref), where `d` is the original length of the dimension.
+* To support adjoints in a new plan, define the trait [`AbstractFFTs.AdjointStyle`](@ref).
+  `AbstractFFTs` implements the following adjoint styles: [`AbstractFFTs.FFTAdjointStyle`](@ref), [`AbstractFFTs.RFFTAdjointStyle`](@ref), [`AbstractFFTs.IRFFTAdjointStyle`](@ref), and [`AbstractFFTs.UnitaryAdjointStyle`](@ref).
+  To define a new adjoint style, define the methods [`AbstractFFTs.adjoint_mul`](@ref) and [`AbstractFFTs.output_size`](@ref).
 
 The normalization convention for your FFT should be that it computes ``y_k = \sum_j x_j \exp(-2\pi i j k/n)`` for a transform of
 length ``n``, and the "backwards" (unnormalized inverse) transform computes the same thing but with ``\exp(+2\pi i jk/n)``.

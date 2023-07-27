@@ -10,9 +10,12 @@ abstract type Plan{T} end
 
 eltype(::Type{<:Plan{T}}) where {T} = T
 
-# size(p) should return the size of the input array for p
-size(p::Plan, d) = size(p)[d]
-output_size(p::Plan, d) = output_size(p)[d]
+"""
+    size(p::Plan, [dim])
+
+Return the size of the input of a plan `p`, optionally at a specified dimenion `dim`.
+"""
+size(p::Plan, dim) = size(p)[dim]
 ndims(p::Plan) = length(size(p))
 length(p::Plan) = prod(size(p))::Int
 
@@ -583,17 +586,73 @@ plan_brfft
 
 ##############################################################################
 
-struct NoProjectionStyle end
-struct RealProjectionStyle end 
-struct RealInverseProjectionStyle 
+"""
+    AbstractFFTs.AdjointStyle(::Plan)
+
+Return the adjoint style of a plan, enabling automatic computation of adjoint plans via
+[`Base.adjoint`](@ref). Instructions for supporting adjoint styles are provided in the
+[implementation instructions](implementations.md#Defining-a-new-implementation).
+"""
+abstract type AdjointStyle end
+
+"""
+    FFTAdjointStyle()
+
+Adjoint style for complex to complex discrete Fourier transforms that normalize
+the output analogously to [`fft`](@ref).
+
+Since the Fourier transform is unitary up to a scaling, the adjoint simply applies 
+the transform's inverse with an appropriate scaling.
+"""
+struct FFTAdjointStyle <: AdjointStyle end
+
+"""
+    RFFTAdjointStyle()
+
+Adjoint style for real to complex discrete Fourier transforms that halve one of
+the output's dimensions and normalize the output analogously to [`rfft`](@ref).
+    
+Since the Fourier transform is unitary up to a scaling, the adjoint applies the transform's 
+inverse, but with appropriate scaling and additional logic to handle the fact that the
+output is projected to exploit its conjugate symmetry (see [`rfft`](@ref)).
+"""
+struct RFFTAdjointStyle <: AdjointStyle end 
+
+"""
+    IRFFTAdjointStyle(d::Dim)
+
+Adjoint style for complex to real discrete Fourier transforms that expect an input
+with a halved dimension and normalize the output analogously to [`irfft`](@ref),
+where `d` is the original length of the dimension.
+    
+Since the Fourier transform is unitary up to a scaling, the adjoint applies the transform's 
+inverse, but with appropriate scaling and additional logic to handle the fact that the
+input is projected to exploit its conjugate symmetry (see [`irfft`](@ref)). 
+"""
+struct IRFFTAdjointStyle <: AdjointStyle
     dim::Int
 end
-const ProjectionStyle = Union{NoProjectionStyle, RealProjectionStyle, RealInverseProjectionStyle}
 
-output_size(p::Plan) = _output_size(p, ProjectionStyle(p))
-_output_size(p::Plan, ::NoProjectionStyle) = size(p)
-_output_size(p::Plan, ::RealProjectionStyle) = rfft_output_size(size(p), fftdims(p))
-_output_size(p::Plan, s::RealInverseProjectionStyle) = brfft_output_size(size(p), s.dim, fftdims(p))
+"""
+    UnitaryAdjointStyle()
+
+Adjoint style for unitary transforms, whose adjoint equals their inverse.
+"""
+struct UnitaryAdjointStyle <: AdjointStyle end
+
+"""
+    output_size(p::Plan, [dim])
+
+Return the size of the output of a plan `p`, optionally at a specified dimension `dim`.
+
+Implementations of a new adjoint style `AS <: AbstractFFTs.AdjointStyle` should define `output_size(::Plan, ::AS)`.
+"""
+output_size(p::Plan) = output_size(p, AdjointStyle(p))
+output_size(p::Plan, dim) = output_size(p)[dim]
+output_size(p::Plan, ::FFTAdjointStyle) = size(p)
+output_size(p::Plan, ::RFFTAdjointStyle) = rfft_output_size(size(p), fftdims(p))
+output_size(p::Plan, s::IRFFTAdjointStyle) = brfft_output_size(size(p), s.dim, fftdims(p))
+output_size(p::Plan, ::UnitaryAdjointStyle) = size(p)
 
 struct AdjointPlan{T,P<:Plan} <: Plan{T}
     p::P
@@ -604,9 +663,7 @@ end
     (p::Plan)'
     adjoint(p::Plan)
 
-Form the adjoint operator of an FFT plan. Returns a plan that performs the adjoint operation of
-the original plan. Note that this differs from the corresponding backwards plan in the case of real
-FFTs due to the halving of one of the dimensions of the FFT output, as described in [`rfft`](@ref).
+Return a plan that performs the adjoint operation of the original plan.
 
 !!! note
     Adjoint plans do not currently support `LinearAlgebra.mul!`. Further, as a new addition to `AbstractFFTs`, 
@@ -620,39 +677,51 @@ Base.adjoint(p::ScaledPlan) = ScaledPlan(p.p', p.scale)
 size(p::AdjointPlan) = output_size(p.p)
 output_size(p::AdjointPlan) = size(p.p)
 
-Base.:*(p::AdjointPlan, x::AbstractArray) = _mul(p, x, ProjectionStyle(p.p))
+Base.:*(p::AdjointPlan, x::AbstractArray) = adjoint_mul(p.p, x)
 
-function _mul(p::AdjointPlan{T}, x::AbstractArray, ::NoProjectionStyle) where {T}
-    dims = fftdims(p.p)
-    N = normalization(T, size(p.p), dims)
-    return (p.p \ x) / N
+"""
+    adjoint_mul(p::Plan, x::AbstractArray)
+
+Multiply an array `x` by the adjoint of a plan `p`. This is equivalent to `p' * x`.
+
+Implementations of a new adjoint style `AS <: AbstractFFTs.AdjointStyle` should define
+`adjoint_mul(::Plan, ::AbstractArray, ::AS)`.
+"""
+adjoint_mul(p::Plan, x::AbstractArray) = adjoint_mul(p, x, AdjointStyle(p))
+
+function adjoint_mul(p::Plan{T}, x::AbstractArray, ::FFTAdjointStyle) where {T}
+    dims = fftdims(p)
+    N = normalization(T, size(p), dims)
+    return (p \ x) / N
 end
 
-function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealProjectionStyle) where {T<:Real}
-    dims = fftdims(p.p)
-    N = normalization(T, size(p.p), dims)
+function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<:Real}
+    dims = fftdims(p)
+    N = normalization(T, size(p), dims)
     halfdim = first(dims)
-    d = size(p.p, halfdim)
-    n = output_size(p.p, halfdim)
+    d = size(p, halfdim)
+    n = output_size(p, halfdim)
     scale = reshape(
         [(i == 1 || (i == n && 2 * (i - 1)) == d) ? N : 2 * N for i in 1:n],
         ntuple(i -> i == halfdim ? n : 1, Val(ndims(x)))
     )
-    return p.p \ (x ./ convert(typeof(x), scale))
+    return p \ (x ./ convert(typeof(x), scale))
 end
 
-function _mul(p::AdjointPlan{T}, x::AbstractArray, ::RealInverseProjectionStyle) where {T}
-    dims = fftdims(p.p)
-    N = normalization(real(T), output_size(p.p), dims)
+function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T}
+    dims = fftdims(p)
+    N = normalization(real(T), output_size(p), dims)
     halfdim = first(dims)
-    n = size(p.p, halfdim)
-    d = output_size(p.p, halfdim)
+    n = size(p, halfdim)
+    d = output_size(p, halfdim)
     scale = reshape(
         [(i == 1 || (i == n && 2 * (i - 1)) == d) ? 1 : 2 for i in 1:n],
         ntuple(i -> i == halfdim ? n : 1, Val(ndims(x)))
     )
-    return (convert(typeof(x), scale) ./ N) .* (p.p \ x)
+    return (convert(typeof(x), scale) ./ N) .* (p \ x)
 end
+
+adjoint_mul(p::Plan, x::AbstractArray, ::UnitaryAdjointStyle) = p \ x
 
 # Analogously to ScaledPlan, define both plan_inv (for no caching) and inv (caches inner plan only).
 plan_inv(p::AdjointPlan) = adjoint(plan_inv(p.p)) 
