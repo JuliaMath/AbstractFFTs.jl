@@ -665,7 +665,7 @@ end
 
 Return a plan that performs the adjoint operation of the original plan.
 
-!!! note
+!!! warning
     Adjoint plans do not currently support `LinearAlgebra.mul!`. Further, as a new addition to `AbstractFFTs`, 
     coverage of `Base.adjoint` in downstream implementations may be limited. 
 """
@@ -676,6 +676,7 @@ Base.adjoint(p::ScaledPlan) = ScaledPlan(p.p', p.scale)
 
 size(p::AdjointPlan) = output_size(p.p)
 output_size(p::AdjointPlan) = size(p.p)
+fftdims(p::AdjointPlan) = fftdims(p.p)
 
 Base.:*(p::AdjointPlan, x::AbstractArray) = adjoint_mul(p.p, x)
 

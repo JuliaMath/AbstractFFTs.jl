@@ -1,3 +1,9 @@
+module TestPlans
+
+using LinearAlgebra
+using AbstractFFTs
+using AbstractFFTs: Plan
+
 mutable struct TestPlan{T,N,G} <: Plan{T}
     region::G
     sz::NTuple{N,Int}
@@ -76,13 +82,13 @@ function dft!(
     return y
 end
 
-function mul!(
+function LinearAlgebra.mul!(
     y::AbstractArray{<:Complex,N}, p::TestPlan, x::AbstractArray{<:Union{Complex,Real},N}
 ) where {N}
     size(y) == size(p) == size(x) || throw(DimensionMismatch())
     dft!(y, x, p.region, -1)
 end
-function mul!(
+function LinearAlgebra.mul!(
     y::AbstractArray{<:Complex,N}, p::InverseTestPlan, x::AbstractArray{<:Union{Complex,Real},N}
 ) where {N}
     size(y) == size(p) == size(x) || throw(DimensionMismatch())
@@ -194,22 +200,17 @@ end
 
 to_real!(x::AbstractArray) = map!(real, x, x)
 
-function Base.:*(p::TestRPlan, x::AbstractArray)
+function LinearAlgebra.mul!(y::AbstractArray{<:Complex, N}, p::TestRPlan, x::AbstractArray{<:Real, N}) where {N}
     size(p) == size(x) || error("array and plan are not consistent")
-
-    # create output array
-    firstdim = first(p.region)::Int
-    d = size(x, firstdim)
-    firstdim_size = d ÷ 2 + 1
-    T = complex(float(eltype(x)))
-    sz = ntuple(i -> i == firstdim ? firstdim_size : size(x, i), Val(ndims(x)))
-    y = similar(x, T, sz)
 
     # compute DFT
     dft!(y, x, p.region, -1)
 
     # we clean the output a bit to make sure that we return real values
     # whenever the output is mathematically guaranteed to be a real number
+    firstdim = first(p.region)::Int
+    d = size(x, firstdim)
+    firstdim_size = d ÷ 2 + 1
     to_real!(selectdim(y, firstdim, 1))
     if iseven(d)
         to_real!(selectdim(y, firstdim, firstdim_size))
@@ -218,29 +219,50 @@ function Base.:*(p::TestRPlan, x::AbstractArray)
     return y
 end
 
-function Base.:*(p::InverseTestRPlan, x::AbstractArray)
+function Base.:*(p::TestRPlan, x::AbstractArray)
+    # create output array
+    firstdim = first(p.region)::Int
+    d = size(x, firstdim)
+    firstdim_size = d ÷ 2 + 1
+    T = complex(float(eltype(x)))
+    sz = ntuple(i -> i == firstdim ? firstdim_size : size(x, i), Val(ndims(x)))
+    y = similar(x, T, sz)
+
+    # run in-place mul!
+    mul!(y, p, x)
+
+    return y
+end
+
+function LinearAlgebra.mul!(y::AbstractArray{<:Real, N}, p::InverseTestRPlan, x::AbstractArray{<:Complex, N}) where {N}
     size(p) == size(x) || error("array and plan are not consistent")
 
+    # compute DFT
+    real_invdft!(y, x, p.region)
+end
+
+function Base.:*(p::InverseTestRPlan, x::AbstractArray)
     # create output array
     firstdim = first(p.region)::Int
     d = p.d
     sz = ntuple(i -> i == firstdim ? d : size(x, i), Val(ndims(x)))
     y = similar(x, real(float(eltype(x))), sz)
 
-    # compute DFT
-    real_invdft!(y, x, p.region)
+    # run in-place mul!
+    mul!(y, p, x)
 
     return y
 end
 
 # In-place plans
-# (simple wrapper of out-of-place plans that does not support inverses)
+# (simple wrapper of OOP plans)
 struct InplaceTestPlan{T,P<:Plan{T}} <: Plan{T}
     plan::P
 end
 
 Base.size(p::InplaceTestPlan) = size(p.plan)
 Base.ndims(p::InplaceTestPlan) = ndims(p.plan)
+AbstractFFTs.fftdims(p::InplaceTestPlan) = fftdims(p.plan)
 AbstractFFTs.AdjointStyle(p::InplaceTestPlan) = AbstractFFTs.AdjointStyle(p.plan)
 
 function AbstractFFTs.plan_fft!(x::AbstractArray, region; kwargs...)
@@ -250,7 +272,10 @@ function AbstractFFTs.plan_bfft!(x::AbstractArray, region; kwargs...)
     return InplaceTestPlan(plan_bfft(x, region; kwargs...))
 end
 
-function LinearAlgebra.mul!(y::AbstractArray, p::InplaceTestPlan, x::AbstractArray)
-    return mul!(y, p.plan, x)
-end
 Base.:*(p::InplaceTestPlan, x::AbstractArray) = copyto!(x, p.plan * x)
+
+AbstractFFTs.plan_inv(p::InplaceTestPlan) = InplaceTestPlan(AbstractFFTs.plan_inv(p.plan))
+# Don't cache inverse of inplace wrapper plan (only inverse of inner plan)
+Base.inv(p::InplaceTestPlan) = InplaceTestPlan(inv(p.plan))
+
+end

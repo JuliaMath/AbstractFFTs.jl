@@ -6,9 +6,11 @@ export fft, ifft, bfft, fft!, ifft!, bfft!,
        fftdims, fftshift, ifftshift, fftshift!, ifftshift!, Frequencies, fftfreq, rfftfreq
 
 include("definitions.jl")
+include("TestUtils.jl")
 
 if !isdefined(Base, :get_extension)
     include("../ext/AbstractFFTsChainRulesCoreExt.jl")
+    include("../ext/AbstractFFTsTestExt.jl")
 end
 
 end # module
