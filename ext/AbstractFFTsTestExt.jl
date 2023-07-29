@@ -54,6 +54,7 @@ const TEST_CASES = (
 
 function TestUtils.test_plan(P::AbstractFFTs.Plan, x::AbstractArray, x_transformed::AbstractArray; inplace_plan=false, copy_input=false)
     _copy = copy_input ? copy : identity
+    @test size(P) == size(x)
     if !inplace_plan
         @test P * _copy(x) ≈ x_transformed
         @test P \ (P * _copy(x)) ≈ x
