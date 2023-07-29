@@ -73,9 +73,9 @@ function TestUtils.test_plan_adjoint(P::AbstractFFTs.Plan, x::AbstractArray; rea
     _copy = copy_input ? copy : identity
     y = rand(eltype(P * _copy(x)), size(P * _copy(x)))
     # test basic properties
-    @test_skip eltype(P') === typeof(y) # (AbstractFFTs.jl#110)
+    @test eltype(P') === eltype(y)
     @test (P')' === P # test adjoint of adjoint
-    @test size(P') == AbstractFFTs.output_size(P) # test size of adjoint 
+    @test size(P') == size(y) # test size of adjoint
     # test correctness of adjoint and its inverse via the dot test
     if !real_plan
         @test dot(y, P * _copy(x)) ≈ dot(P' * _copy(y), x)

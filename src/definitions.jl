@@ -259,7 +259,6 @@ ScaledPlan(p::Plan{T}, scale::Number) where {T} = ScaledPlan{T}(p, scale)
 ScaledPlan(p::ScaledPlan, α::Number) = ScaledPlan(p.p, p.scale * α)
 
 size(p::ScaledPlan) = size(p.p)
-output_size(p::ScaledPlan) = output_size(p.p)
 
 fftdims(p::ScaledPlan) = fftdims(p.p)
 
@@ -640,20 +639,6 @@ Adjoint style for unitary transforms, whose adjoint equals their inverse.
 """
 struct UnitaryAdjointStyle <: AdjointStyle end
 
-"""
-    output_size(p::Plan, [dim])
-
-Return the size of the output of a plan `p`, optionally at a specified dimension `dim`.
-
-Implementations of a new adjoint style `AS <: AbstractFFTs.AdjointStyle` should define `output_size(::Plan, ::AS)`.
-"""
-output_size(p::Plan) = output_size(p, AdjointStyle(p))
-output_size(p::Plan, dim) = output_size(p)[dim]
-output_size(p::Plan, ::FFTAdjointStyle) = size(p)
-output_size(p::Plan, ::RFFTAdjointStyle) = rfft_output_size(size(p), fftdims(p))
-output_size(p::Plan, s::IRFFTAdjointStyle) = brfft_output_size(size(p), s.dim, fftdims(p))
-output_size(p::Plan, ::UnitaryAdjointStyle) = size(p)
-
 struct AdjointPlan{T,P<:Plan} <: Plan{T}
     p::P
     AdjointPlan{T,P}(p) where {T,P} = new(p)
@@ -669,13 +654,15 @@ Return a plan that performs the adjoint operation of the original plan.
     Adjoint plans do not currently support `LinearAlgebra.mul!`. Further, as a new addition to `AbstractFFTs`, 
     coverage of `Base.adjoint` in downstream implementations may be limited. 
 """
-Base.adjoint(p::Plan{T}) where {T} = AdjointPlan{T, typeof(p)}(p)
+# We eagerly form the plan inverse in the adjoint(p) call, which will be cached for subsequent calls.
+# This is reasonable, as inv(p) would do the same, and necessary in order to compute the correct input
+# type for the adjoint plan and encode it in its type.
+Base.adjoint(p::Plan{T}) where {T} = AdjointPlan{eltype(inv(p)), typeof(p)}(p)
 Base.adjoint(p::AdjointPlan) = p.p
 # always have AdjointPlan inside ScaledPlan.
 Base.adjoint(p::ScaledPlan) = ScaledPlan(p.p', p.scale)
 
-size(p::AdjointPlan) = output_size(p.p)
-output_size(p::AdjointPlan) = size(p.p)
+size(p::AdjointPlan) = size(inv(p.p))
 fftdims(p::AdjointPlan) = fftdims(p.p)
 
 Base.:*(p::AdjointPlan, x::AbstractArray) = adjoint_mul(p.p, x)
@@ -701,7 +688,7 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<
     N = normalization(T, size(p), dims)
     halfdim = first(dims)
     d = size(p, halfdim)
-    n = output_size(p, halfdim)
+    n = size(inv(p), halfdim)
     scale = reshape(
         [(i == 1 || (i == n && 2 * (i - 1)) == d) ? N : 2 * N for i in 1:n],
         ntuple(i -> i == halfdim ? n : 1, Val(ndims(x)))
@@ -711,10 +698,10 @@ end
 
 function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T}
     dims = fftdims(p)
-    N = normalization(real(T), output_size(p), dims)
+    N = normalization(real(T), size(inv(p)), dims)
     halfdim = first(dims)
     n = size(p, halfdim)
-    d = output_size(p, halfdim)
+    d = size(inv(p), halfdim)
     scale = reshape(
         [(i == 1 || (i == n && 2 * (i - 1)) == d) ? 1 : 2 for i in 1:n],
         ntuple(i -> i == halfdim ? n : 1, Val(ndims(x)))
