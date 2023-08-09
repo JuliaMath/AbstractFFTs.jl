@@ -702,11 +702,16 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<
     halfdim = first(dims)
     d = size(p, halfdim)
     n = output_size(p, halfdim)
-    scale = reshape(
-        [(i == 1 || (i == n && 2 * (i - 1)) == d) ? N : 2 * N for i in 1:n],
-        ntuple(i -> i == halfdim ? n : 1, Val(ndims(x)))
-    )
-    return p \ (x ./ convert(typeof(x), scale))
+    y = map(x, CartesianIndices(x)) do xj, j
+        i = j[halfdim]
+        yj = if i == 1 || (i == n && 2 * (i - 1) == d)
+            xj / N
+        else
+            xj / (2 * N)
+        end
+        return yj
+    end
+    return p \ y
 end
 
 function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T}
@@ -715,11 +720,17 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T
     halfdim = first(dims)
     n = size(p, halfdim)
     d = output_size(p, halfdim)
-    scale = reshape(
-        [(i == 1 || (i == n && 2 * (i - 1)) == d) ? 1 : 2 for i in 1:n],
-        ntuple(i -> i == halfdim ? n : 1, Val(ndims(x)))
-    )
-    return (convert(typeof(x), scale) ./ N) .* (p \ x)
+    y = p \ x
+    z = map(y, CartesianIndices(y)) do yj, j
+        i = j[halfdim]
+        zj = if i == 1 || (i == n && 2 * (i - 1) == d)
+            zj / N
+        else
+            2 * zj / N
+        end
+        return zj
+    end
+    return z
 end
 
 adjoint_mul(p::Plan, x::AbstractArray, ::UnitaryAdjointStyle) = p \ x
