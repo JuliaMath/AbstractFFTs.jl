@@ -724,9 +724,9 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T
     z = map(y, CartesianIndices(y)) do yj, j
         i = j[halfdim]
         zj = if i == 1 || (i == n && 2 * (i - 1) == d)
-            zj / N
+            yj / N
         else
-            2 * zj / N
+            2 * yj / N
         end
         return zj
     end
