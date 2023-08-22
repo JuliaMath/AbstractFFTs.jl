@@ -61,6 +61,7 @@ function TestUtils.test_plan(P::AbstractFFTs.Plan, x::AbstractArray, x_transform
         _x_out = similar(P * _copy(x))
         @test mul!(_x_out, P, _copy(x)) ≈ x_transformed
         @test _x_out ≈ x_transformed
+        @test P * view(_copy(x), axes(x)...) ≈ x_transformed # test view input
     else
         _x = copy(x)
         @test P * _copy(_x) ≈ x_transformed
@@ -86,6 +87,7 @@ function TestUtils.test_plan_adjoint(P::AbstractFFTs.Plan, x::AbstractArray; rea
         @test _component_dot(y, P * _copy(x)) ≈ _component_dot(P' * _copy(y), x)
         @test _component_dot(x, P \ _copy(y)) ≈ _component_dot(P' \ _copy(x), y) 
     end
+    @test P' * view(_copy(y), axes(y)...) ≈ P' * _copy(y) # test view input (AbstractFFTs.jl#112)
     @test_throws MethodError mul!(x, P', y)
 end
 
