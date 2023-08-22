@@ -681,30 +681,26 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::FFTAdjointStyle) where {T}
     dims = fftdims(p)
     N = normalization(T, size(p), dims)
     pinv = inv(p)
-    # Optimization: when pinv is a ScaledPlan, check if we can avoid a loop over x.  
+    # Optimization: when pinv is a ScaledPlan, check if we can avoid a loop over x.
     # Even if not, ensure that we do only one pass by combining the normalization with the plan.
-    if pinv isa ScaledPlan && isapprox(pinv.scale, N)
-        scaled_pinv = pinv.p
+    scaled_pinv = if pinv isa ScaledPlan && isapprox(pinv.scale, N)
+        pinv.p
     else
-        scaled_pinv = (1/N) * pinv
+        (1/N) * pinv
     end
     return scaled_pinv * x
 end
 
 function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<:Real}
     dims = fftdims(p)
-    N = normalization(T, size(p), dims)
+    _N = normalization(T, size(p), dims)
     halfdim = first(dims)
     d = size(p, halfdim)
     pinv = inv(p)
     n = size(pinv, halfdim)
     # Optimization: when pinv is a ScaledPlan, fuse the scaling into our map to ensure we do not loop over x twice.
-    if pinv isa ScaledPlan
-        N /= pinv.scale
-        scaled_pinv = pinv.p
-    else
-        scaled_pinv = pinv
-    end
+    N = pinv isa ScaledPlan ? _N / pinv.scale : _N
+    scaled_pinv = pinv isa ScaledPlan ? pinv.p : pinv 
     y = map(x, CartesianIndices(x)) do xj, j
         i = j[halfdim]
         yj = if i == 1 || (i == n && 2 * (i - 1) == d)
@@ -719,18 +715,14 @@ end
 
 function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T}
     dims = fftdims(p)
-    N = normalization(real(T), size(inv(p)), dims)
+    _N = normalization(real(T), size(inv(p)), dims)
     halfdim = first(dims)
     n = size(p, halfdim)
     pinv = inv(p)
     d = size(pinv, halfdim)
     # Optimization: when pinv is a ScaledPlan, fuse the scaling into our map to ensure we do not loop over x twice.
-    if pinv isa ScaledPlan
-        N /= pinv.scale
-        scaled_pinv = pinv.p
-    else
-        scaled_pinv = pinv
-    end
+    N = pinv isa ScaledPlan ? _N / pinv.scale : _N
+    scaled_pinv = pinv isa ScaledPlan ? pinv.p : pinv 
     y = scaled_pinv * x
     z = map(y, CartesianIndices(y)) do yj, j
         i = j[halfdim]
