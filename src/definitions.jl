@@ -683,12 +683,11 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::FFTAdjointStyle) where {T}
     pinv = inv(p)
     # Optimization: when pinv is a ScaledPlan, check if we can avoid a loop over x.
     # Even if not, ensure that we do only one pass by combining the normalization with the plan.
-    scaled_pinv = if pinv isa ScaledPlan && isapprox(pinv.scale, N)
-        pinv.p
+    if pinv isa ScaledPlan && isapprox(pinv.scale, N)
+        return pinv.p * x
     else
-        (1/N) * pinv
+        return (1/N * pinv) * x
     end
-    return scaled_pinv * x
 end
 
 function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<:Real}
