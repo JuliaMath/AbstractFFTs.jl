@@ -680,7 +680,15 @@ adjoint_mul(p::Plan, x::AbstractArray) = adjoint_mul(p, x, AdjointStyle(p))
 function adjoint_mul(p::Plan{T}, x::AbstractArray, ::FFTAdjointStyle) where {T}
     dims = fftdims(p)
     N = normalization(T, size(p), dims)
-    return (p \ x) / N
+    pinv = inv(p)
+    # Optimization: when pinv is a ScaledPlan, check if we can avoid a loop over x.  
+    # Even if not, ensure that we do only one pass by combining the normalization with the plan.
+    if pinv isa ScaledPlan && isapprox(pinv.scale, N)
+        scaled_pinv = pinv.p
+    else
+        scaled_pinv = (1/N) * pinv
+    end
+    return scaled_pinv * x
 end
 
 function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<:Real}
@@ -688,7 +696,15 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<
     N = normalization(T, size(p), dims)
     halfdim = first(dims)
     d = size(p, halfdim)
-    n = size(inv(p), halfdim)
+    pinv = inv(p)
+    n = size(pinv, halfdim)
+    # Optimization: when pinv is a ScaledPlan, fuse the scaling into our map to ensure we do not loop over x twice.
+    if pinv isa ScaledPlan
+        N /= pinv.scale
+        scaled_pinv = pinv.p
+    else
+        scaled_pinv = pinv
+    end
     y = map(x, CartesianIndices(x)) do xj, j
         i = j[halfdim]
         yj = if i == 1 || (i == n && 2 * (i - 1) == d)
@@ -698,7 +714,7 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<
         end
         return yj
     end
-    return p \ y
+    return scaled_pinv * y
 end
 
 function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T}
@@ -706,8 +722,16 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T
     N = normalization(real(T), size(inv(p)), dims)
     halfdim = first(dims)
     n = size(p, halfdim)
-    d = size(inv(p), halfdim)
-    y = p \ x
+    pinv = inv(p)
+    d = size(pinv, halfdim)
+    # Optimization: when pinv is a ScaledPlan, fuse the scaling into our map to ensure we do not loop over x twice.
+    if pinv isa ScaledPlan
+        N /= pinv.scale
+        scaled_pinv = pinv.p
+    else
+        scaled_pinv = pinv
+    end
+    y = scaled_pinv * x
     z = map(y, CartesianIndices(y)) do yj, j
         i = j[halfdim]
         zj = if i == 1 || (i == n && 2 * (i - 1) == d)
