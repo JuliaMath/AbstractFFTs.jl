@@ -699,11 +699,12 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<
     n = size(pinv, halfdim)
     # Optimization: when pinv is a ScaledPlan, fuse the scaling into our map to ensure we do not loop over x twice.
     scale = pinv isa ScaledPlan ? pinv.scale / 2N : 1 / 2N
+    twoscale = 2 * scale 
     unscaled_pinv = pinv isa ScaledPlan ? pinv.p : pinv 
     y = map(x, CartesianIndices(x)) do xj, j
         i = j[halfdim]
         yj = if i == 1 || (i == n && 2 * (i - 1) == d)
-            xj * scale * 2
+            xj * twoscale
         else
             xj * scale
         end
@@ -721,6 +722,7 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T
     d = size(pinv, halfdim)
     # Optimization: when pinv is a ScaledPlan, fuse the scaling into our map to ensure we do not loop over x twice.
     scale = pinv isa ScaledPlan ? pinv.scale / N : 1 / N
+    twoscale = 2 * scale 
     unscaled_pinv = pinv isa ScaledPlan ? pinv.p : pinv 
     y = unscaled_pinv * x
     z = map(y, CartesianIndices(y)) do yj, j
@@ -728,7 +730,7 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T
         zj = if i == 1 || (i == n && 2 * (i - 1) == d)
             yj * scale
         else
-            yj * scale * 2
+            yj * twoscale
         end
         return zj
     end
