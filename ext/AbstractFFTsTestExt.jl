@@ -6,6 +6,7 @@ using AbstractFFTs
 using AbstractFFTs: TestUtils
 using AbstractFFTs.LinearAlgebra
 using Test
+import Random
 
 # Ground truth x_fft computed using FFTW library
 const TEST_CASES = (
@@ -52,7 +53,8 @@ const TEST_CASES = (
         )
 
 
-function TestUtils.test_plan(P::AbstractFFTs.Plan, x::AbstractArray, x_transformed::AbstractArray; inplace_plan=false, copy_input=false)
+function TestUtils.test_plan(P::AbstractFFTs.Plan, x::AbstractArray, x_transformed::AbstractArray;
+                             inplace_plan=false, copy_input=false, test_wrappers=true)
     _copy = copy_input ? copy : identity
     @test size(P) == size(x)
     if !inplace_plan
@@ -61,7 +63,9 @@ function TestUtils.test_plan(P::AbstractFFTs.Plan, x::AbstractArray, x_transform
         _x_out = similar(P * _copy(x))
         @test mul!(_x_out, P, _copy(x)) ≈ x_transformed
         @test _x_out ≈ x_transformed
-        @test P * view(_copy(x), axes(x)...) ≈ x_transformed # test view input
+        if test_wrappers
+            @test P * view(_copy(x), axes(x)...) ≈ x_transformed # test view input
+        end
     else
         _x = copy(x)
         @test P * _copy(_x) ≈ x_transformed
@@ -71,9 +75,10 @@ function TestUtils.test_plan(P::AbstractFFTs.Plan, x::AbstractArray, x_transform
     end
 end
 
-function TestUtils.test_plan_adjoint(P::AbstractFFTs.Plan, x::AbstractArray; real_plan=false, copy_input=false)
+function TestUtils.test_plan_adjoint(P::AbstractFFTs.Plan, x::AbstractArray;
+                                     real_plan=false, copy_input=false, test_wrappers=true)
     _copy = copy_input ? copy : identity
-    y = rand(eltype(P * _copy(x)), size(P * _copy(x)))
+    y = Random.rand!(P * _copy(x))
     # test basic properties
     @test eltype(P') === eltype(y)
     @test (P')' === P # test adjoint of adjoint
@@ -87,11 +92,13 @@ function TestUtils.test_plan_adjoint(P::AbstractFFTs.Plan, x::AbstractArray; rea
         @test _component_dot(y, P * _copy(x)) ≈ _component_dot(P' * _copy(y), x)
         @test _component_dot(x, P \ _copy(y)) ≈ _component_dot(P' \ _copy(x), y) 
     end
-    @test P' * view(_copy(y), axes(y)...) ≈ P' * _copy(y) # test view input (AbstractFFTs.jl#112)
+    if test_wrappers
+        @test P' * view(_copy(y), axes(y)...) ≈ P' * _copy(y) # test view input (AbstractFFTs.jl#112)
+    end
     @test_throws MethodError mul!(x, P', y)
 end
 
-function TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_adjoint=true) 
+function TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_adjoint=true, test_wrappers=true) 
     @testset "correctness of fft, bfft, ifft" begin
         for test_case in TEST_CASES
             _x, dims, _x_fft = copy(test_case.x), test_case.dims, copy(test_case.x_fft)
@@ -111,18 +118,18 @@ function TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_ad
             for P in (plan_fft(similar(x_complexf), dims), 
                       (_inv(plan_ifft(similar(x_complexf), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                 @test eltype(P) <: Complex
-                @test fftdims(P) == dims
-                TestUtils.test_plan(P, x_complexf, x_fft)
+                @test collect(fftdims(P))[:] == collect(dims)[:] # compare as iterables
+                TestUtils.test_plan(P, x_complexf, x_fft; test_wrappers=test_wrappers)
                 if test_adjoint
                     @test fftdims(P') == fftdims(P)
-                    TestUtils.test_plan_adjoint(P, x_complexf)
+                    TestUtils.test_plan_adjoint(P, x_complexf, test_wrappers=test_wrappers)
                 end
             end
             if test_inplace
                 # test IIP plans
                 for P in (plan_fft!(similar(x_complexf), dims), 
                           (_inv(plan_ifft!(similar(x_complexf), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
-                    TestUtils.test_plan(P, x_complexf, x_fft; inplace_plan=true)
+                    TestUtils.test_plan(P, x_complexf, x_fft; inplace_plan=true, test_wrappers=test_wrappers)
                 end
             end
 
@@ -137,17 +144,17 @@ function TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_ad
             # test OOP plans. Just 1 plan to test, but we use a for loop for consistent style
             for P in (plan_bfft(similar(x_fft), dims),)
                 @test eltype(P) <: Complex
-                @test fftdims(P) == dims
-                TestUtils.test_plan(P, x_fft, x_scaled)
+                @test collect(fftdims(P))[:] == collect(dims)[:] # compare as iterables
+                TestUtils.test_plan(P, x_fft, x_scaled; test_wrappers=test_wrappers)
                 if test_adjoint
-                    TestUtils.test_plan_adjoint(P, x_fft)
+                    TestUtils.test_plan_adjoint(P, x_fft, test_wrappers=test_wrappers)
                 end
             end
             # test IIP plans
             for P in (plan_bfft!(similar(x_fft), dims),)
                 @test eltype(P) <: Complex
-                @test fftdims(P) == dims
-                TestUtils.test_plan(P, x_fft, x_scaled; inplace_plan=true)
+                @test collect(fftdims(P))[:] == collect(dims)[:] # compare as iterables
+                TestUtils.test_plan(P, x_fft, x_scaled; inplace_plan=true, test_wrappers=test_wrappers)
             end
 
             # IFFT
@@ -161,10 +168,10 @@ function TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_ad
             for P in (plan_ifft(similar(x_complexf), dims), 
                       (_inv(plan_fft(similar(x_complexf), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                 @test eltype(P) <: Complex
-                @test fftdims(P) == dims
-                TestUtils.test_plan(P, x_fft, x)
+                @test collect(fftdims(P))[:] == collect(dims)[:] # compare as iterables
+                TestUtils.test_plan(P, x_fft, x; test_wrappers=test_wrappers)
                 if test_adjoint
-                    TestUtils.test_plan_adjoint(P, x_fft)
+                    TestUtils.test_plan_adjoint(P, x_fft; test_wrappers=test_wrappers)
                 end
             end
             # test IIP plans
@@ -172,22 +179,22 @@ function TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_ad
                 for P in (plan_ifft!(similar(x_complexf), dims), 
                           (_inv(plan_fft!(similar(x_complexf), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                     @test eltype(P) <: Complex
-                    @test fftdims(P) == dims
-                    TestUtils.test_plan(P, x_fft, x; inplace_plan=true)
+                    @test collect(fftdims(P))[:] == collect(dims)[:] # compare as iterables
+                    TestUtils.test_plan(P, x_fft, x; inplace_plan=true, test_wrappers=test_wrappers)
                 end
             end
         end
     end
 end
 
-function TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input=false)
+function TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input=false, test_wrappers=true)
     @testset "correctness of rfft, brfft, irfft" begin
         for test_case in TEST_CASES
             _x, dims, _x_fft = copy(test_case.x), test_case.dims, copy(test_case.x_fft)
             x = convert(ArrayType, _x) # dummy array that will be passed to plans
             x_real = float.(x) # for testing mutating real FFTs
             x_fft = convert(ArrayType, _x_fft)
-            x_rfft = collect(selectdim(x_fft, first(dims), 1:(size(x_fft, first(dims)) ÷ 2 + 1)))
+            x_rfft = convert(ArrayType, collect(selectdim(x_fft, first(dims), 1:(size(x_fft, first(dims)) ÷ 2 + 1))))
 
             if !(eltype(x) <: Real)
                 continue
@@ -198,10 +205,10 @@ function TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input
             for P in (plan_rfft(similar(x_real), dims), 
                       (_inv(plan_irfft(similar(x_rfft), size(x, first(dims)), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                 @test eltype(P) <: Real
-                @test fftdims(P) == dims
-                TestUtils.test_plan(P, x_real, x_rfft; copy_input=copy_input)
+                @test collect(fftdims(P))[:] == collect(dims)[:] # compare as iterables
+                TestUtils.test_plan(P, x_real, x_rfft; copy_input=copy_input, test_wrappers=test_wrappers)
                 if test_adjoint
-                    TestUtils.test_plan_adjoint(P, x_real; real_plan=true, copy_input=copy_input)
+                    TestUtils.test_plan_adjoint(P, x_real; real_plan=true, copy_input=copy_input, test_wrappers=test_wrappers)
                 end
             end
 
@@ -210,10 +217,10 @@ function TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input
             @test brfft(x_rfft, size(x, first(dims)), dims) ≈ x_scaled
             for P in (plan_brfft(similar(x_rfft), size(x, first(dims)), dims),)
                 @test eltype(P) <: Complex
-                @test fftdims(P) == dims
-                TestUtils.test_plan(P, x_rfft, x_scaled; copy_input=copy_input)
+                @test collect(fftdims(P))[:] == collect(dims)[:] # compare as iterables
+                TestUtils.test_plan(P, x_rfft, x_scaled; copy_input=copy_input, test_wrappers=test_wrappers)
                 if test_adjoint
-                    TestUtils.test_plan_adjoint(P, x_rfft; real_plan=true, copy_input=copy_input)
+                    TestUtils.test_plan_adjoint(P, x_rfft; real_plan=true, copy_input=copy_input, test_wrappers=test_wrappers)
                 end
             end
 
@@ -222,10 +229,10 @@ function TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input
             for P in (plan_irfft(similar(x_rfft), size(x, first(dims)), dims), 
                       (_inv(plan_rfft(similar(x_real), dims)) for _inv in (inv, AbstractFFTs.plan_inv))...)
                 @test eltype(P) <: Complex
-                @test fftdims(P) == dims
-                TestUtils.test_plan(P, x_rfft, x; copy_input=copy_input)
+                @test collect(fftdims(P))[:] == collect(dims)[:] # compare as iterables
+                TestUtils.test_plan(P, x_rfft, x; copy_input=copy_input, test_wrappers=test_wrappers)
                 if test_adjoint
-                    TestUtils.test_plan_adjoint(P, x_rfft; real_plan=true, copy_input=copy_input)
+                    TestUtils.test_plan_adjoint(P, x_rfft; real_plan=true, copy_input=copy_input, test_wrappers=test_wrappers)
                 end
             end
         end
