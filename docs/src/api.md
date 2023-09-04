@@ -38,7 +38,6 @@ It is also relevant to implementers of FFT plans that wish to support adjoints.
 ```@docs
 Base.adjoint
 AbstractFFTs.AdjointStyle
-AbstractFFTs.output_size
 AbstractFFTs.adjoint_mul
 AbstractFFTs.FFTAdjointStyle
 AbstractFFTs.RFFTAdjointStyle

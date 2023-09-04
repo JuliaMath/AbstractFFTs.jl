@@ -118,41 +118,6 @@ end
     @test @inferred(f9(plan_fft(zeros(10), 1), 10)) == 1/10
 end
 
-@testset "output size" begin
-    @testset "complex fft output size" begin
-        for x_shape in ((3,), (3, 4), (3, 4, 5))
-            N = length(x_shape)
-            real_x = randn(x_shape)
-            complex_x = randn(ComplexF64, x_shape)
-            for x in (real_x, complex_x)
-                for dims in unique((1, 1:N, N))
-                    P = plan_fft(x, dims)
-                    @test @inferred(AbstractFFTs.output_size(P)) == size(x)
-                    @test AbstractFFTs.output_size(P') == size(x)
-                    Pinv = plan_ifft(x)
-                    @test AbstractFFTs.output_size(Pinv) == size(x)
-                    @test AbstractFFTs.output_size(Pinv') == size(x)
-                end
-            end
-        end
-    end
-    @testset "real fft output size" begin
-        for x in (randn(3), randn(4), randn(3, 4), randn(3, 4, 5)) # test odd and even lengths
-            N = ndims(x)
-            for dims in unique((1, 1:N, N))
-                P = plan_rfft(x, dims)        
-                Px_sz = size(P * x)
-                @test AbstractFFTs.output_size(P) == Px_sz 
-                @test AbstractFFTs.output_size(P') == size(x) 
-                y = randn(ComplexF64, Px_sz)
-                Pinv = plan_irfft(y, size(x)[first(dims)], dims)
-                @test AbstractFFTs.output_size(Pinv) == size(Pinv * y)
-                @test AbstractFFTs.output_size(Pinv') == size(y)
-            end
-        end
-    end
-end
-
 # Test that dims defaults to 1:ndims for fft-like functions
 @testset "Default dims" begin
     for x in (randn(3), randn(3, 4), randn(3, 4, 5))
