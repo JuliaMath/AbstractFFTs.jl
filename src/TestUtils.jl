@@ -3,7 +3,7 @@ module TestUtils
 import ..AbstractFFTs
 
 """
-    TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_adjoint=true) 
+    TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_adjoint=true, test_wrappers=true) 
 
 Run tests to verify correctness of FFT, BFFT, and IFFT functionality using a particular backend plan implementation. 
 The backend implementation is assumed to be loaded prior to calling this function.
@@ -15,11 +15,12 @@ The backend implementation is assumed to be loaded prior to calling this functio
   `convert(ArrayType, ...)`.
 - `test_inplace=true`: whether to test in-place plans. 
 - `test_adjoint=true`: whether to test [plan adjoints](api.md#Base.adjoint). 
+- `test_wrappers=true`: whether to test any wrapper array inputs such as views. 
 """
 function test_complex_ffts end
 
 """
-    TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input=false)
+    TestUtils.test_real_ffts(ArrayType=Array; test_adjoint=true, copy_input=false, test_wrappers=true)
 
 Run tests to verify correctness of RFFT, BRFFT, and IRFFT functionality using a particular backend plan implementation. 
 The backend implementation is assumed to be loaded prior to calling this function.
@@ -32,18 +33,21 @@ The backend implementation is assumed to be loaded prior to calling this functio
 - `test_adjoint=true`: whether to test [plan adjoints](api.md#Base.adjoint). 
 - `copy_input=false`: whether to copy the input before applying the plan in tests, to accomodate for 
   [input-mutating behaviour of real FFTW plans](https://github.com/JuliaMath/AbstractFFTs.jl/issues/101).
+- `test_wrappers=true`: whether to test any wrapper array inputs such as views. 
 """
 function test_real_ffts end
 
     # Always copy input before application due to FFTW real plans possibly mutating input (AbstractFFTs.jl#101)
 """
     TestUtils.test_plan(P::Plan, x::AbstractArray, x_transformed::AbstractArray;
-                        inplace_plan=false, copy_input=false)
+                        inplace_plan=false, copy_input=false, test_wrappers=true)
 
 Test basic properties of a plan `P` given an input array `x` and expected output `x_transformed`.
 
 Because [real FFTW plans may mutate their input in some cases](https://github.com/JuliaMath/AbstractFFTs.jl/issues/101), 
 we allow specifying `copy_input=true` to allow for this behaviour in tests by copying the input before applying the plan.
+We also allow specifying `test_wrappers=false` to skip testing wrapper array inputs such as views, which may cause ambiguity
+issues for some array types currently.
 """
 function test_plan end
 
@@ -57,6 +61,8 @@ Real-to-complex and complex-to-real plans require a slightly modified dot test, 
 The plan is assumed out-of-place, as adjoints are not yet supported for in-place plans.
 Because [real FFTW plans may mutate their input in some cases](https://github.com/JuliaMath/AbstractFFTs.jl/issues/101), 
 we allow specifying `copy_input=true` to allow for this behaviour in tests by copying the input before applying the plan.
+We also allow specifying `test_wrappers=false` to skip testing wrapper array inputs such as views, which may cause ambiguity
+issues for some array types currently.
 """
 function test_plan_adjoint end
 
