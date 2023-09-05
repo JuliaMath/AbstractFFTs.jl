@@ -1,5 +1,7 @@
 module TestUtils
 
+import ..AbstractFFTs
+
 """
     TestUtils.test_complex_ffts(ArrayType=Array; test_inplace=true, test_adjoint=true) 
 
