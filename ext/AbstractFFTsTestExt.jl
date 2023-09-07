@@ -6,7 +6,6 @@ using AbstractFFTs
 using AbstractFFTs: TestUtils
 using AbstractFFTs.LinearAlgebra
 using Test
-import Random
 
 # Ground truth x_fft computed using FFTW library
 const TEST_CASES = (
@@ -78,7 +77,7 @@ end
 function TestUtils.test_plan_adjoint(P::AbstractFFTs.Plan, x::AbstractArray;
                                      real_plan=false, copy_input=false, test_wrappers=true)
     _copy = copy_input ? copy : identity
-    y = Random.rand!(P * _copy(x))
+    y = map(a -> rand(typeof(a)), P * _copy(x)) # generically construct rand array
     # test basic properties
     @test eltype(P') === eltype(y)
     @test (P')' === P # test adjoint of adjoint
