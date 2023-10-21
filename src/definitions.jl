@@ -683,7 +683,7 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::FFTAdjointStyle) where {T}
     pinv = inv(p)
     # Optimization: when pinv is a ScaledPlan, check if we can avoid a loop over x.
     # Even if not, ensure that we do only one pass by combining the normalization with the plan.
-    RT = AbstractArray{T} # canonicalize eltype of returned array to be extra safe about type stability  
+    RT = AbstractArray{<:T} # canonicalize eltype of returned array to be extra safe about type stability  
     if pinv isa ScaledPlan && pinv.scale == N
         return convert(RT, pinv.p * x)
     else
