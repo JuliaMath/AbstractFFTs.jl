@@ -145,6 +145,21 @@ end
     end
 end
 
+@testset "Adjoint plan on single-precision" begin
+    # fft
+    p = plan_fft(zeros(ComplexF32, 3))
+    u = rand(ComplexF32, 3)
+    @test eltype(p' * (p * u)) == eltype(u)
+    # rfft
+    p = plan_rfft(zeros(Float32, 3))
+    u = rand(Float32, 3)
+    @test eltype(p' * (p * u)) == eltype(u)
+    # brfft
+    p = plan_brfft(zeros(ComplexF32, 3), 5)
+    u = rand(ComplexF32, 3)
+    @test eltype(p' * (p * u)) == eltype(u)
+end
+
 @testset "ChainRules" begin
     @testset "shift functions" begin
         for x in (randn(3), randn(3, 4), randn(3, 4, 5))
