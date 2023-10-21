@@ -160,6 +160,24 @@ end
     @test eltype(p' * (p * u)) == eltype(u)
 end
 
+@testset "Adjoint plan application when plan inverse is not a ScaledPlan" begin
+    # fft
+    p0 = plan_fft(zeros(ComplexF64, 3))
+    p = TestPlans.DummyTestPlan(p0)
+    u = rand(ComplexF64, 3)
+    @test p' * u ≈ p0' * u 
+    # rfft
+    p0 = plan_rfft(zeros(3))
+    p = TestPlans.DummyTestPlan(p0)
+    u = rand(ComplexF64, 2)
+    @test p' * u ≈ p0' * u 
+    # brfft
+    p0 = plan_brfft(zeros(ComplexF64, 3), 5)
+    p = TestPlans.DummyTestPlan(p0)
+    u = rand(Float64, 5)
+    @test p' * u ≈ p0' * u 
+end
+
 @testset "ChainRules" begin
     @testset "shift functions" begin
         for x in (randn(3), randn(3, 4), randn(3, 4, 5))
