@@ -278,4 +278,20 @@ AbstractFFTs.plan_inv(p::InplaceTestPlan) = InplaceTestPlan(AbstractFFTs.plan_in
 # Don't cache inverse of inplace wrapper plan (only inverse of inner plan)
 Base.inv(p::InplaceTestPlan) = InplaceTestPlan(inv(p.plan))
 
+# A wrapper plan whose inverse is not an instance of AbstractFFTs.ScaledPlan, for testing purposes
+
+struct WrapperTestPlan{T,P<:Plan{T}} <: Plan{T}
+    plan::P
+end
+
+Base.size(p::WrapperTestPlan) = size(p.plan)
+Base.ndims(p::WrapperTestPlan) = ndims(p.plan)
+AbstractFFTs.fftdims(p::WrapperTestPlan) = fftdims(p.plan)
+AbstractFFTs.AdjointStyle(p::WrapperTestPlan) = AbstractFFTs.AdjointStyle(p.plan)
+
+Base.:*(p::WrapperTestPlan, x::AbstractArray) = p.plan * x
+
+AbstractFFTs.plan_inv(p::WrapperTestPlan) = WrapperTestPlan(AbstractFFTs.plan_inv(p.plan))
+Base.inv(p::WrapperTestPlan) = WrapperTestPlan(inv(p.plan))
+
 end

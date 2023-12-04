@@ -681,13 +681,8 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::FFTAdjointStyle) where {T}
     dims = fftdims(p)
     N = normalization(T, size(p), dims)
     pinv = inv(p)
-    # Optimization: when pinv is a ScaledPlan, check if we can avoid a loop over x.
-    # Even if not, ensure that we do only one pass by combining the normalization with the plan.
-    if pinv isa ScaledPlan && pinv.scale == N
-        return pinv.p * x
-    else
-        return (1/N * pinv) * x
-    end
+    # Ensure that we do only one pass over the array by combining the normalization with the plan.
+    return (inv(N) * pinv) * x
 end
 
 function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<:Real}
@@ -698,7 +693,7 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<
     pinv = inv(p)
     n = size(pinv, halfdim)
     # Optimization: when pinv is a ScaledPlan, fuse the scaling into our map to ensure we do not loop over x twice.
-    scale = pinv isa ScaledPlan ? pinv.scale / 2N : 1 / 2N
+    scale = pinv isa ScaledPlan ? pinv.scale / 2N : inv(2N)
     twoscale = 2 * scale 
     unscaled_pinv = pinv isa ScaledPlan ? pinv.p : pinv 
     y = map(x, CartesianIndices(x)) do xj, j
@@ -721,7 +716,7 @@ function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T
     pinv = inv(p)
     d = size(pinv, halfdim)
     # Optimization: when pinv is a ScaledPlan, fuse the scaling into our map to ensure we do not loop over x twice.
-    scale = pinv isa ScaledPlan ? pinv.scale / N : 1 / N
+    scale = pinv isa ScaledPlan ? pinv.scale / N : inv(N)
     twoscale = 2 * scale 
     unscaled_pinv = pinv isa ScaledPlan ? pinv.p : pinv 
     y = unscaled_pinv * x
