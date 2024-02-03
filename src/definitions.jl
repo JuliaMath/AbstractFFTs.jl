@@ -462,13 +462,8 @@ Base.maximum(f::Frequencies{T}) where T = (f.n_nonnegative - ifelse(f.multiplier
 Base.minimum(f::Frequencies{T}) where T = (f.n_nonnegative - ifelse(f.multiplier >= zero(T), f.n, 1)) * f.multiplier
 Base.extrema(f::Frequencies) = (minimum(f), maximum(f))
 
-function Base.show(io::IO, f::Frequencies)
-    r1 = 0:f.n_nonnegative-1
-    r2 = -f.n + f.n_nonnegative:-1
-    print(io, "[", r1, ";")
-    !isempty(r2) && print(io, " ", r2)
-    print(io, "]*", step(f))
-    return nothing
+function show(io::IO, f::Frequencies)
+    print(io, Frequencies, "(", f.n_nonnegative, ", ", f.n, ", ", f.multiplier, ")")
 end
 
 """

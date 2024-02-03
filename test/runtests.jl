@@ -110,19 +110,10 @@ end
     end
 
     @testset "show" begin
-        for f in Any[fftfreq(6), fftfreq(7, 2), rfftfreq(5, 0.3), rfftfreq(4, 3)]
-            fnn = f.n_nonnegative
-            r1 = 0:fnn - 1
-            r2 = -length(f) + fnn:-1
-            v = [r1; r2] * step(f)
-            @test v ≈ f
-            s = repr(f)
-            if !isempty(r2) # fftfreq
-                @test s == "[$r1; $r2]*$(step(f))"
-            else # rfftfreq
-                @test s == "[$r1;]*$(step(f))"
-            end
-        end
+        @test repr(fftfreq(6)) == "Frequencies(3, 6, $(1/6))"
+        @test repr(fftfreq(7, 2)) == "Frequencies(4, 7, $(2/7))"
+        @test repr(rfftfreq(5, 0.3)) == "Frequencies(3, 3, $(0.3/5))"
+        @test repr(rfftfreq(4, 3)) == "Frequencies(3, 3, $(3/4))"
     end
 end
 
