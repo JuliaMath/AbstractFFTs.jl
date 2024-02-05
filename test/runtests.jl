@@ -108,6 +108,13 @@ end
             check_extrema(freqs)
         end
     end
+
+    @testset "show" begin
+        @test repr(fftfreq(6)) == "Frequencies(3, 6, $(1/6))"
+        @test repr(fftfreq(7, 2)) == "Frequencies(4, 7, $(2/7))"
+        @test repr(rfftfreq(5, 0.3)) == "Frequencies(3, 3, $(0.3/5))"
+        @test repr(rfftfreq(4, 3)) == "Frequencies(3, 3, $(3/4))"
+    end
 end
 
 @testset "normalization" begin
