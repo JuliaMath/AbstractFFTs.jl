@@ -278,7 +278,7 @@ _checkindex(szinds, region) = all(r -> checkindex(Bool, szinds, r), region)
 @inline function normalization(::Type{T}, sz, region) where T
     @boundscheck (!isempty(region) && _checkindex(eachindex(sz), region)) ||
         throw(BoundsError(sz, region))
-    one(T) / mapreduce(r -> Int(@inbounds sz[r])::Int, *, region; init=oneunit(eltype(sz)))::Int
+    one(T) / mapreduce(r -> Int(@inbounds sz[r])::Int, *, region; init=1)::Int
 end
 normalization(X, region) = normalization(real(eltype(X)), size(X), region)
 
