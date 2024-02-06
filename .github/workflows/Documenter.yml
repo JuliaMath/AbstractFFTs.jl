@@ -19,6 +19,8 @@ jobs:
       # needed to allow julia-actions/cache to proactively delete old caches that it has created
       actions: write 
       contents: write
+      # needed to allow the workflow to create a status with a link to the docs preview
+      statuses: write
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v1
