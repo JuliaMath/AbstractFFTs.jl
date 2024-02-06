@@ -19,7 +19,6 @@ jobs:
       # needed to allow julia-actions/cache to proactively delete old caches that it has created
       actions: write 
       contents: write
-      statuses: write
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v1
@@ -33,13 +32,6 @@ jobs:
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
       - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-docdeploy@v1
+      - run: julia --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run doctests
-        shell: julia --project=docs --color=yes {0}
-        run: |
-          using Documenter: DocMeta, doctest
-          using AbstractFFTs
-          DocMeta.setdocmeta!(AbstractFFTs, :DocTestSetup, :(using AbstractFFTs); recursive=true)
-          doctest(AbstractFFTs)
