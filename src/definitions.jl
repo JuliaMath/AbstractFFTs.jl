@@ -271,7 +271,7 @@ summary(p::ScaledPlan) = string(p.scale, " * ", summary(p.p))
 *(p::Plan, I::UniformScaling) = ScaledPlan(p, I.λ)
 
 @inline function normalization(::Type{T}, sz, region) where T
-    one(T) / prod(r -> Int(sz[r])::Int, region, init=1)::Int
+    one(T) / mapreduce(r -> Int(sz[r])::Int, *, region; init=1)::Int
 end
 normalization(X, region) = normalization(real(eltype(X)), size(X), region)
 
