@@ -123,6 +123,9 @@ end
     # p::TestPlan)
     f9(p::AbstractFFTs.Plan{T}, sz) where {T} = AbstractFFTs.normalization(real(T), sz, fftdims(p))
     @test @inferred(f9(plan_fft(zeros(10), 1), 10)) == 1/10
+
+    @test_throws BoundsError AbstractFFTs.normalization(Float64, (2,), 1:3)
+    @test_throws BoundsError AbstractFFTs.normalization(Float64, (2,), (1,3,))
 end
 
 # Test that dims defaults to 1:ndims for fft-like functions
