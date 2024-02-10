@@ -7,6 +7,11 @@ using LinearAlgebra
 using ChainRulesCore
 using FiniteDifferences
 
+import Aqua
+@testset "Project quality" begin
+    Aqua.test_all(AbstractFFTs)
+end
+
 Random.seed!(1234)
 
 # Load example plan implementation.
