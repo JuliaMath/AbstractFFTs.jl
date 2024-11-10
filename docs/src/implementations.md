@@ -8,6 +8,8 @@ The following packages extend the functionality provided by AbstractFFTs:
   [FFTW](http://www.fftw.org) library. This also used to be part of Base Julia.
 * [FastTransforms.jl](https://github.com/JuliaApproximation/FastTransforms.jl):
   Pure-Julia implementation of FFT, with support for arbitrary AbstractFloat types.
+* [RustFFT.jl](https://github.com/Taaitaaiger/RustFFT.jl): Julia wrapper to [RustFFT](https://docs.rs/rustfft/latest/rustfft/), a SIMD-accelerated FFT library written in pure Rust, with support for one-dimensional, complex-valued arrays.
+
 
 ## Defining a new implementation
 
