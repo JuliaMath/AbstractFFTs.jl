@@ -219,7 +219,7 @@ function LinearAlgebra.mul!(y::AbstractArray{<:Complex, N}, p::TestRPlan, x::Abs
     return y
 end
 
-function Base.:*(p::TestRPlan{T}, x::AbstractArray{T}) where T
+function Base.:*(p::TestRPlan{Typ}, x::AbstractArray{Typ}) where Typ
     # create output array
     firstdim = first(p.region)::Int
     d = size(x, firstdim)
@@ -241,7 +241,7 @@ function LinearAlgebra.mul!(y::AbstractArray{<:Real, N}, p::InverseTestRPlan, x:
     real_invdft!(y, x, p.region)
 end
 
-function Base.:*(p::InverseTestRPlan{T}, x::AbstractArray{T}) where T
+function Base.:*(p::InverseTestRPlan{T}, x::AbstractArray{Complex{T}}) where T
     # create output array
     firstdim = first(p.region)::Int
     d = p.d

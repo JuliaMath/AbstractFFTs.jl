@@ -52,6 +52,6 @@ using ForwardDiff: Dual, partials, value
     end
 
     c1 = complex.(x1)
-    @test mul!(similar(c1), FFTW.plan_fft(x1), x1) == fft(x1)
-    @test mul!(similar(c1), FFTW.plan_fft(c1), c1) == fft(c1)
+    @test mul!(similar(c1), plan_fft(x1), x1) == fft(x1)
+    @test mul!(similar(c1), plan_fft(c1), c1) == fft(c1)
 end

@@ -8,7 +8,7 @@ import AbstractFFTs: Plan
 for P in (:Plan, :ScaledPlan)  # need ScaledPlan to avoid ambiguities
     @eval begin
         Base.:*(p::AbstractFFTs.$P, x::AbstractArray{DT}) where DT<:Dual = array2dual(DT, p * dual2array(x))
-        Base.:*(p::AbstractFFTs.$P, x::AbstractArray{<:Complex{DT}}) where DT<:Dual = array2dual(DT, p * dual2array(x))
+        Base.:*(p::AbstractFFTs.$P, x::AbstractArray{Complex{DT}}) where DT<:Dual = array2dual(DT, p * dual2array(x))
     end
 end
 

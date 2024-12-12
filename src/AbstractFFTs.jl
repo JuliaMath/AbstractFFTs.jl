@@ -11,6 +11,7 @@ include("TestUtils.jl")
 if !isdefined(Base, :get_extension)
     include("../ext/AbstractFFTsChainRulesCoreExt.jl")
     include("../ext/AbstractFFTsTestExt.jl")
+    include("../ext/AbstractFFTsForwardDiffExt.jl")
 end
 
 end # module
