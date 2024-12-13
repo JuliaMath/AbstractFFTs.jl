@@ -221,9 +221,7 @@ rfft(x::AbstractArray{<:Union{Integer,Rational}}, region=1:ndims(x)) = rfft(real
 plan_rfft(x::AbstractArray, region; kws...) = plan_rfft(realfloat(x), region; kws...)
 
 # only require implementation to provide *(::Plan{T}, ::Array{T})
-plan_mul(p::Plan{T}, x::AbstractArray) where {T} = p * copy1(T, x)
-plan_mul(p::Plan{T}, x::AbstractArray{T}) where {T} = error("The plan interface requires overloading *(::MyPlan{T}, ::AbstractArray{T}) where T")
-*(p::Plan, x::AbstractArray) = plan_mul(p, x)
+*(p::Plan{T}, x::AbstractArray) where {T} = p * copy1(T, x)
 
 # Implementations should also implement mul!(Y, plan, X) so as to support
 # pre-allocated output arrays.  We don't define * in terms of mul!
