@@ -32,7 +32,7 @@ jobs:
           - '1'
         os:
           - ubuntu-latest
-          - macOS-latest
+          - macos-13 # Intel
           - windows-latest
         arch:
           - x64
