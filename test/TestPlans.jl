@@ -95,8 +95,8 @@ function LinearAlgebra.mul!(
     dft!(y, x, p.region, 1)
 end
 
-Base.:*(p::TestPlan{T}, x::AbstractArray{T}) where T = mul!(similar(x, complex(float(eltype(x)))), p, x)
-Base.:*(p::InverseTestPlan{T}, x::AbstractArray{T}) where T = mul!(similar(x, complex(float(eltype(x)))), p, x)
+Base.:*(p::TestPlan, x::AbstractArray) = mul!(similar(x, complex(float(eltype(x)))), p, x)
+Base.:*(p::InverseTestPlan, x::AbstractArray) = mul!(similar(x, complex(float(eltype(x)))), p, x)
 
 mutable struct TestRPlan{T,N,G} <: Plan{T}
     region::G
@@ -219,7 +219,7 @@ function LinearAlgebra.mul!(y::AbstractArray{<:Complex, N}, p::TestRPlan, x::Abs
     return y
 end
 
-function Base.:*(p::TestRPlan{Typ}, x::AbstractArray{Typ}) where Typ
+function Base.:*(p::TestRPlan, x::AbstractArray)
     # create output array
     firstdim = first(p.region)::Int
     d = size(x, firstdim)
@@ -241,7 +241,7 @@ function LinearAlgebra.mul!(y::AbstractArray{<:Real, N}, p::InverseTestRPlan, x:
     real_invdft!(y, x, p.region)
 end
 
-function Base.:*(p::InverseTestRPlan{T}, x::AbstractArray{Complex{T}}) where T
+function Base.:*(p::InverseTestRPlan, x::AbstractArray)
     # create output array
     firstdim = first(p.region)::Int
     d = p.d
