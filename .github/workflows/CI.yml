@@ -23,10 +23,10 @@ jobs:
         arch:
           - x64
         include:
-          # macos-latest -> Apple Silicon
+          # macos-latest -> Apple Silicon (Need julia >= v1.8)
           - os: macos-latest
             arch: 'aarch64'
-            version: '1.0'
+            version: 'lts'
           - os: macos-latest
             arch: 'aarch64'
             version: '1'
