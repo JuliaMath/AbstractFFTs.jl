@@ -22,6 +22,17 @@ jobs:
           - windows-latest
         arch:
           - x64
+        include:
+          # macos-latest -> Apple Silicon
+          - os: macos-latest
+            julia-arch: 'aarch64'
+            julia-version: '1.0'
+          - os: macos-latest
+            julia-arch: 'aarch64'
+            julia-version: '1'
+          - os: macos-latest
+            julia-arch: 'aarch64'
+            julia-version: 'nightly'
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
