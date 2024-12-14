@@ -61,4 +61,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # required
           fail_ci_if_error: true
-          file: lcov.info
+          files: lcov.info
