@@ -4,7 +4,7 @@ using AbstractFFTs
 using AbstractFFTs.LinearAlgebra
 import ForwardDiff
 import ForwardDiff: Dual
-import AbstractFFTs: Plan, mul!
+import AbstractFFTs: Plan, mul!, dualplan, dual2array
 
 
 AbstractFFTs.complexfloat(x::AbstractArray{<:Dual}) = AbstractFFTs.complexfloat.(x)
@@ -32,6 +32,7 @@ end
 
 DualPlan(::Type{Dual{Tag,V,N}}, p::Plan{T}) where {Tag,T<:Real,V,N} = DualPlan{Dual{Tag,T,N},typeof(p)}(p)
 DualPlan(::Type{Dual{Tag,V,N}}, p::Plan{Complex{T}}) where {Tag,T<:Real,V,N} = DualPlan{Complex{Dual{Tag,T,N}},typeof(p)}(p)
+dualplan(D, p) = DualPlan(D, p)
 Base.size(p::DualPlan) = Base.tail(size(p.p))
 Base.:*(p::DualPlan{DT}, x::AbstractArray{DT}) where DT<:Dual = array2dual(DT, p.p * dual2array(x))
 Base.:*(p::DualPlan{Complex{DT}}, x::AbstractArray{Complex{DT}}) where DT<:Dual = array2dual(DT, p.p * dual2array(x))
@@ -48,11 +49,18 @@ end
 
 for plan in (:plan_fft, :plan_ifft, :plan_bfft, :plan_rfft)
     @eval begin
-        AbstractFFTs.$plan(x::AbstractArray{D}, dims=1:ndims(x)) where D<:Dual = DualPlan(D, AbstractFFTs.$plan(dual2array(x), 1 .+ dims))
-        AbstractFFTs.$plan(x::AbstractArray{<:Complex{D}}, dims=1:ndims(x)) where D<:Dual = DualPlan(D, AbstractFFTs.$plan(dual2array(x), 1 .+ dims))
+        AbstractFFTs.$plan(x::AbstractArray{D}, dims=1:ndims(x)) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), 1 .+ dims))
+        AbstractFFTs.$plan(x::AbstractArray{<:Complex{D}}, dims=1:ndims(x)) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), 1 .+ dims))
     end
 end
 
+
+for plan in (:plan_irfft, :plan_brfft)  # these take an extra argument, only when complex?
+    @eval begin
+        AbstractFFTs.$plan(x::AbstractArray{D}, dims=1:ndims(x)) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), 1 .+ dims))
+        AbstractFFTs.$plan(x::AbstractArray{<:Complex{D}}, d::Integer, mdims=1:ndims(x)) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), d, 1 .+ dims))
+    end
+end
 
 
 end # module
