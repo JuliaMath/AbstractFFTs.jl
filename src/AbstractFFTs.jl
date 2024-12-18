@@ -15,7 +15,6 @@ function dual2array end
 if !isdefined(Base, :get_extension)
     include("../ext/AbstractFFTsChainRulesCoreExt.jl")
     include("../ext/AbstractFFTsTestExt.jl")
-    include("../ext/AbstractFFTsForwardDiffExt.jl")
 end
 
 
