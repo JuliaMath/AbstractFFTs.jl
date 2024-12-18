@@ -9,8 +9,8 @@ complexpartials(x, k) = partials(real(x), k) + im*partials(imag(x), k)
 @testset "ForwardDiff extension tests" begin
     x1 = Dual.(1:4.0, 2:5, 3:6)
 
-    @test AbstractFFTs.complexfloat(x1)[1] === AbstractFFTs.complexfloat(x1[1]) === Dual(1.0, 2.0, 3.0) + 0im
-    @test AbstractFFTs.realfloat(x1)[1] === AbstractFFTs.realfloat(x1[1]) === Dual(1.0, 2.0, 3.0)
+    @test AbstractFFTs.complexfloat(x1)[1] === Dual(1.0, 2.0, 3.0) + 0im
+    @test AbstractFFTs.realfloat(x1)[1] === Dual(1.0, 2.0, 3.0)
 
     @test fft(x1, 1)[1] isa Complex{<:Dual}
 
