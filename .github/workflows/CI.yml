@@ -18,21 +18,14 @@ jobs:
           - 'nightly'
         os:
           - ubuntu-latest
-          - macos-13 # Intel
+          - macos-latest # Apple silicon
           - windows-latest
-        arch:
-          - x64
+        exclude:
+          - os: macos-latest
+            version: '1.0'
         include:
-          # macos-latest -> Apple Silicon (Need julia >= v1.8)
-          - os: macos-latest
-            arch: 'aarch64'
-            version: 'lts'
-          - os: macos-latest
-            arch: 'aarch64'
-            version: '1'
-          - os: macos-latest
-            arch: 'aarch64'
-            version: 'nightly'
+          - os: macos-13 # Intel
+            version: '1.0'
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
