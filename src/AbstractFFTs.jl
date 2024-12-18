@@ -17,5 +17,4 @@ if !isdefined(Base, :get_extension)
     include("../ext/AbstractFFTsTestExt.jl")
 end
 
-
 end # module
