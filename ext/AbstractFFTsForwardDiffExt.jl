@@ -45,17 +45,14 @@ end
 
 for plan in (:plan_fft, :plan_ifft, :plan_bfft, :plan_rfft)
     @eval begin
-        AbstractFFTs.$plan(x::AbstractArray{D}, dims=1:ndims(x)) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), 1 .+ dims))
-        AbstractFFTs.$plan(x::AbstractArray{<:Complex{D}}, dims=1:ndims(x)) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), 1 .+ dims))
+        AbstractFFTs.$plan(x::AbstractArray{D}, dims=1:ndims(x); kwds...) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), 1 .+ dims; kwds...))
+        AbstractFFTs.$plan(x::AbstractArray{<:Complex{D}}, dims=1:ndims(x); kwds...) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), 1 .+ dims; kwds...))
     end
 end
 
 
 for plan in (:plan_irfft, :plan_brfft)  # these take an extra argument, only when complex?
-    @eval begin
-        AbstractFFTs.$plan(x::AbstractArray{D}, dims=1:ndims(x)) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), 1 .+ dims))
-        AbstractFFTs.$plan(x::AbstractArray{<:Complex{D}}, d::Integer, dims=1:ndims(x)) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), d, 1 .+ dims))
-    end
+    @eval AbstractFFTs.$plan(x::AbstractArray{<:Complex{D}}, d::Integer, dims=1:ndims(x); kwds...) where D<:Dual = dualplan(D, AbstractFFTs.$plan(dual2array(x), d, 1 .+ dims; kwds...))
 end
 
 

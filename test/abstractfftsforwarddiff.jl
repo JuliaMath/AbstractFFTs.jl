@@ -8,6 +8,7 @@ complexpartials(x, k) = partials(real(x), k) + im*partials(imag(x), k)
 
 @testset "ForwardDiff extension tests" begin
     x1 = Dual.(1:4.0, 2:5, 3:6)
+    c1 = Dual.(1:4.0, 2:5, 3:6) + im*Dual.(2:5.0, 3:6, 3:6)
 
     @test AbstractFFTs.complexfloat(x1)[1] === Dual(1.0, 2.0, 3.0) + 0im
     @test AbstractFFTs.realfloat(x1)[1] === Dual(1.0, 2.0, 3.0)
@@ -54,7 +55,15 @@ complexpartials(x, k) = partials(real(x), k) + im*partials(imag(x), k)
         @test complexpartials.(fft(A, 2), 2) == fft(partials.(A, 2), 2)
     end
 
-    c1 = complex.(x1)
-    @test mul!(similar(c1), plan_fft(x1), x1) == fft(x1)
-    @test mul!(similar(c1), plan_fft(c1), c1) == fft(c1)
+    @testset "complex" begin
+        @test fft(c1) ≈ fft(real(c1)) + im*fft(imag(c1))
+        dest = similar(c1)
+        @test mul!(dest, plan_fft(x1), x1) == fft(x1) == dest
+        @test mul!(dest, plan_fft(c1), c1) == fft(c1) == dest
+
+        C = c1 * ((1:10) .+ im*(2:11))'
+        @test fft(C) ≈ fft(real(C)) + im*fft(imag(C))
+        dest = similar(C)
+        @test mul!(dest, plan_fft(C), C) == fft(C) == dest
+    end
 end
