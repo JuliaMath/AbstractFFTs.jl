@@ -7,7 +7,7 @@ on:
     tags: '*'
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -18,16 +18,19 @@ jobs:
           - 'nightly'
         os:
           - ubuntu-latest
-          - macOS-latest
+          - macos-latest # Apple silicon
           - windows-latest
-        arch:
-          - x64
+        exclude:
+          - os: macos-latest
+            version: '1.0'
+        include:
+          - os: macos-13 # Intel
+            version: '1.0'
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
@@ -36,4 +39,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # required
           fail_ci_if_error: true
-          file: lcov.info
+          files: lcov.info

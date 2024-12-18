@@ -3,7 +3,7 @@
 A general framework for fast Fourier transforms (FFTs) in Julia.
 
 [![GHA](https://github.com/JuliaMath/AbstractFFTs.jl/workflows/CI/badge.svg)](https://github.com/JuliaMath/AbstractFFTs.jl/actions?query=workflow%3ACI+branch%3Amaster)
-[![Codecov](http://codecov.io/github/JuliaMath/AbstractFFTs.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaMath/AbstractFFTs.jl?branch=master)
+[![Codecov](https://codecov.io/github/JuliaMath/AbstractFFTs.jl/graph/badge.svg?token=ZJrE86Hpz7)](https://codecov.io/github/JuliaMath/AbstractFFTs.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 Documentation:
