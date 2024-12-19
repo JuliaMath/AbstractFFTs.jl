@@ -9,10 +9,10 @@ import AbstractFFTs: Plan, mul!, dualplan, dual2array
 
 AbstractFFTs._fftfloat(::Type{Dual{T,V,N}}) where {T,V,N} = Dual{T,AbstractFFTs._fftfloat(V),N}
 
-dual2array(x::Array{<:Dual{Tag,T}}) where {Tag,T} = reinterpret(reshape, T, x)
-dual2array(x::Array{<:Complex{<:Dual{Tag, T}}}) where {Tag,T} = complex.(dual2array(real(x)), dual2array(imag(x)))
-array2dual(DT::Type{<:Dual}, x::Array{T}) where T = reinterpret(reshape, DT, real(x))
-array2dual(DT::Type{<:Dual}, x::Array{<:Complex{T}}) where T = complex.(array2dual(DT, real(x)), array2dual(DT, imag(x)))
+dual2array(x::StridedArray{<:Dual{Tag,T}}) where {Tag,T} = reinterpret(reshape, T, x)
+dual2array(x::StridedArray{<:Complex{<:Dual{Tag, T}}}) where {Tag,T} = complex.(dual2array(real(x)), dual2array(imag(x)))
+array2dual(DT::Type{<:Dual}, x::StridedArray{T}) where T = reinterpret(reshape, DT, real(x))
+array2dual(DT::Type{<:Dual}, x::StridedArray{<:Complex{T}}) where T = complex.(array2dual(DT, real(x)), array2dual(DT, imag(x)))
 
 
 ########

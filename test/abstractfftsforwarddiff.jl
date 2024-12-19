@@ -37,9 +37,6 @@ complexpartials(x, k) = partials(real(x), k) + im*partials(imag(x), k)
     # emperical from Mathematical
     @test ForwardDiff.derivative(ω -> fft(exp.(ω .* cos.(θ)))[1]/n, 1) ≈ 0.565159103992485
 
-    # c = x -> dct([x; 0; 0])[1]
-    # @test derivative(c,0.1) ≈ 1
-
     @testset "matrix" begin
         A = x1 * (1:10)'
         @test value.(fft(A)) == fft(value.(A))
