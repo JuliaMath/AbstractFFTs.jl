@@ -14,6 +14,8 @@ complexpartials(x, k) = partials(real(x), k) + im*partials(imag(x), k)
     @test AbstractFFTs.realfloat(x1)[1] === Dual(1.0, 2.0, 3.0)
 
     @test fft(x1, 1)[1] isa Complex{<:Dual}
+    @test plan_fft(x1, 1) * x1 == fft(x1, 1)
+    @test size(plan_fft(x1,1)) == (4,)
 
     @testset "$f" for f in (fft, ifft, rfft, bfft)
         @test value.(f(x1)) == f(value.(x1))
