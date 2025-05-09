@@ -2,7 +2,7 @@
 
 A general framework for fast Fourier transforms (FFTs) in Julia.
 
-[![GHA](https://github.com/JuliaMath/AbstractFFTs.jl/workflows/CI/badge.svg)](https://github.com/JuliaMath/AbstractFFTs.jl/actions?query=workflow%3ACI+branch%3Amaster)
+[![CI](https://github.com/JuliaMath/AbstractFFTs.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/JuliaMath/AbstractFFTs.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 [![Codecov](https://codecov.io/github/JuliaMath/AbstractFFTs.jl/graph/badge.svg?token=ZJrE86Hpz7)](https://codecov.io/github/JuliaMath/AbstractFFTs.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
@@ -18,4 +18,3 @@ This allows multiple FFT packages to co-exist with the same underlying `fft(x)` 
 ## Developer information
 
 To define a new FFT implementation in your own module, see [defining a new implementation](https://juliamath.github.io/AbstractFFTs.jl/stable/implementations/#Defining-a-new-implementation).
-
