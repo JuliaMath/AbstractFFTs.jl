@@ -2,5 +2,8 @@
 AbstractFFTs = "621f4979-c628-5d54-868e-fcf4e3e8185c"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 
+[sources]
+AbstractFFTs = { path = ".." }
+
 [compat]
 Documenter = "^1"
