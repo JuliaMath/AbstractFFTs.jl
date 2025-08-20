@@ -1,10 +1,24 @@
 name: CI
+
 on:
   pull_request:
+    paths:
+      - '.github/workflows/CI.yml'
+      - 'ext/**'
+      - 'src/**'
+      - 'test/**'
+      - 'Project.toml'
   push:
     branches:
       - master
     tags: '*'
+    paths:
+      - '.github/workflows/CI.yml'
+      - 'ext/**'
+      - 'src/**'
+      - 'test/**'
+      - 'Project.toml'
+
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
