@@ -2,10 +2,20 @@ name: IntegrationTest
 
 on:
   pull_request:
+    paths:
+      - '.github/workflows/IntegrationTest.yml'
+      - 'ext/**'
+      - 'src/**'
+      - 'Project.toml'
   push:
     branches:
       - master
     tags: '*'
+    paths:
+      - '.github/workflows/IntegrationTest.yml'
+      - 'ext/**'
+      - 'src/**'
+      - 'Project.toml'
 
 jobs:
   test:
@@ -25,6 +35,7 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
           arch: x64
+      - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - name: Clone Downstream
         uses: actions/checkout@v5
@@ -32,7 +43,7 @@ jobs:
           repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
           path: downstream
       - name: Load this and run the downstream tests
-        shell: julia --project=downstream {0}
+        shell: julia --color=yes --project=downstream {0}
         run: |
           using Pkg
           try

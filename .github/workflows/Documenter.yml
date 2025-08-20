@@ -1,9 +1,20 @@
 name: Documenter
+
 on:
   push:
     branches: [master]
     tags: [v*]
+    paths:
+      - '.github/workflows/Documenter.yml'
+      - 'docs/**'
+      - 'src/**'
+      - 'Project.toml'
   pull_request:
+    paths:
+      - '.github/workflows/Documenter.yml'
+      - 'docs/**'
+      - 'src/**'
+      - 'Project.toml'
 
 concurrency:
   # Skip intermediate builds: always.
@@ -34,6 +45,6 @@ jobs:
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
       - uses: julia-actions/julia-buildpkg@v1
-      - run: julia --project=docs docs/make.jl
+      - run: julia --project=docs --color=yes docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
