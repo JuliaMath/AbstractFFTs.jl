@@ -17,7 +17,7 @@ Random.seed!(1234)
 # Load example plan implementation.
 include("TestPlans.jl")
 
-# Run interface tests for TestPlans 
+# Run interface tests for TestPlans
 AbstractFFTs.TestUtils.test_complex_ffts(Array)
 AbstractFFTs.TestUtils.test_real_ffts(Array)
 
@@ -180,17 +180,17 @@ end
     p0 = plan_fft(zeros(ComplexF64, 3))
     p = TestPlans.WrapperTestPlan(p0)
     u = rand(ComplexF64, 3)
-    @test p' * u ≈ p0' * u 
+    @test p' * u ≈ p0' * u
     # rfft
     p0 = plan_rfft(zeros(3))
     p = TestPlans.WrapperTestPlan(p0)
     u = rand(ComplexF64, 2)
-    @test p' * u ≈ p0' * u 
+    @test p' * u ≈ p0' * u
     # brfft
     p0 = plan_brfft(zeros(ComplexF64, 3), 5)
     p = TestPlans.WrapperTestPlan(p0)
     u = rand(Float64, 5)
-    @test p' * u ≈ p0' * u 
+    @test p' * u ≈ p0' * u
 end
 
 @testset "ChainRules" begin
@@ -238,7 +238,7 @@ end
                     test_frule(f, complex_x, dims)
                     test_rrule(f, complex_x, dims)
                 end
-                for (pf, pf!) in ((plan_fft, plan_fft!), (plan_ifft, plan_ifft!), (plan_bfft, plan_bfft!)) 
+                for (pf, pf!) in ((plan_fft, plan_fft!), (plan_ifft, plan_ifft!), (plan_bfft, plan_bfft!))
                     test_frule(*, pf(x, dims), x)
                     test_rrule(*, pf(x, dims), x)
                     test_frule(*, pf(complex_x, dims), complex_x)
@@ -248,7 +248,7 @@ end
                     @test_throws ArgumentError ChainRulesCore.rrule(*, pf!(complex_x, dims), complex_x)
                 end
 
-                # rfft 
+                # rfft
                 test_frule(rfft, x, dims)
                 test_rrule(rfft, x, dims)
                 test_frule(*, plan_rfft(x, dims), x)
@@ -266,11 +266,14 @@ end
                 for pf in (plan_irfft, plan_brfft)
                     for d in (2 * size(x, first(dims)) - 1, 2 * size(x, first(dims)) - 2)
                         test_frule(*, pf(complex_x, d, dims), complex_x)
-                        test_rrule(*, pf(complex_x, d, dims), complex_x) 
+                        test_rrule(*, pf(complex_x, d, dims), complex_x)
                     end
                 end
             end
         end
     end
 end
-            
+
+if isdefined(Base, :get_extension)
+    include("abstractfftsforwarddiff.jl")
+end
