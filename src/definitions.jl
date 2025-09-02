@@ -58,26 +58,61 @@ to1(x::AbstractArray) = _to1(axes(x), x)
 _to1(::Tuple{Base.OneTo,Vararg{Base.OneTo}}, x) = x
 _to1(::Tuple, x) = copy1(eltype(x), x)
 
+# Abstract FFT Backend
+export AbstractFFTBackend
+abstract type AbstractFFTBackend end
+const ACTIVE_BACKEND = Ref{Union{Missing, AbstractFFTBackend}}(missing)
+
+"""
+    set_active_backend!(back::Union{Missing, Module, AbstractFFTBackend})
+
+Set the default FFT plan backend. A module `back` must implement `back.backend()`.
+"""
+set_active_backend!(back::Module) = set_active_backend!(back.backend())
+function set_active_backend!(back::Union{Missing, AbstractFFTBackend})
+  ACTIVE_BACKEND[] = back
+end
+active_backend() = ACTIVE_BACKEND[]
+function no_backend_error() 
+  error(
+    """
+    No default backend available!
+    Make sure to also "import/using" an FFT backend such as FFTW, FFTA or RustFFT.
+    """
+  )
+end
+
+for f in (:fft, :bfft, :ifft, :fft!, :bfft!, :ifft!, :rfft, :brfft, :irfft)
+    pf = Symbol("plan_", f)
+    @eval begin
+        $f(x::AbstractArray, args...; kws...) = $f(active_backend(), x, args...; kws...)
+        $pf(x::AbstractArray, args...; kws...) = $pf(active_backend(), x, args...; kws...)
+        $f(::Missing, x::AbstractArray, args...; kws...) = no_backend_error()
+        $pf(::Missing, x::AbstractArray, args...; kws...) = no_backend_error()
+    end
+end
 # implementations only need to provide plan_X(x, region)
 # for X in (:fft, :bfft, ...):
 for f in (:fft, :bfft, :ifft, :fft!, :bfft!, :ifft!, :rfft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray) = $f(x, 1:ndims(x))
-        $f(x::AbstractArray, region) = (y = to1(x); $pf(y, region) * y)
-        $pf(x::AbstractArray; kws...) = (y = to1(x); $pf(y, 1:ndims(y); kws...))
+        $f(b::AbstractFFTBackend, x::AbstractArray) = $f(b, x, 1:ndims(x))
+        $f(b::AbstractFFTBackend, x::AbstractArray, region) = (y = to1(x); $pf(b, y, region) * y)
+        $pf(b::AbstractFFTBackend, x::AbstractArray; kws...) = (y = to1(x); $pf(b, y, 1:ndims(y); kws...))
     end
 end
 
 """
+    plan_ifft(backend, A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
     plan_ifft(A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
 Same as [`plan_fft`](@ref), but produces a plan that performs inverse transforms
-[`ifft`](@ref).
+[`ifft`](@ref). Uses active `backend` if no explicit `backend` is provided.
 """
 plan_ifft
 
 """
+    plan_ifft!(backend, A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
     plan_ifft!(A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
 Same as [`plan_ifft`](@ref), but operates in-place on `A`.
@@ -85,6 +120,7 @@ Same as [`plan_ifft`](@ref), but operates in-place on `A`.
 plan_ifft!
 
 """
+    plan_bfft!(backend, A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
     plan_bfft!(A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
 Same as [`plan_bfft`](@ref), but operates in-place on `A`.
@@ -92,20 +128,24 @@ Same as [`plan_bfft`](@ref), but operates in-place on `A`.
 plan_bfft!
 
 """
+    plan_bfft(backend, A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
     plan_bfft(A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
 Same as [`plan_fft`](@ref), but produces a plan that performs an unnormalized
-backwards transform [`bfft`](@ref).
+backwards transform [`bfft`](@ref). Uses active `backend` if no explicit `backend` is provided.
 """
 plan_bfft
 
 """
+    plan_fft(backend, A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
     plan_fft(A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
 Pre-plan an optimized FFT along given dimensions (`dims`) of arrays matching the shape and
 type of `A`.  (The first two arguments have the same meaning as for [`fft`](@ref).)
 Returns an object `P` which represents the linear operator computed by the FFT, and which
 contains all of the information needed to compute `fft(A, dims)` quickly.
+
+Uses active `backend` if no explicit `backend` is provided.
 
 To apply `P` to an array `A`, use `P * A`; in general, the syntax for applying plans is much
 like that of matrices.  (A plan can only be applied to arrays of the same size as the `A`
@@ -132,6 +172,7 @@ plans that perform the equivalent of the inverse transforms [`ifft`](@ref) and s
 plan_fft
 
 """
+    plan_fft!(backend A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
     plan_fft!(A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
 Same as [`plan_fft`](@ref), but operates in-place on `A`.
@@ -139,12 +180,15 @@ Same as [`plan_fft`](@ref), but operates in-place on `A`.
 plan_fft!
 
 """
+    rfft(backend, A [, dims])
     rfft(A [, dims])
 
 Multidimensional FFT of a real array `A`, exploiting the fact that the transform has
 conjugate symmetry in order to save roughly half the computational time and storage costs
 compared with [`fft`](@ref). If `A` has size `(n_1, ..., n_d)`, the result has size
 `(div(n_1,2)+1, ..., n_d)`.
+
+Uses active `backend` if no explicit `backend` is provided.
 
 The optional `dims` argument specifies an iterable subset of one or more dimensions of `A`
 to transform, similar to [`fft`](@ref). Instead of (roughly) halving the first
@@ -153,6 +197,7 @@ dimension of `A` in the result, the `dims[1]` dimension is (roughly) halved in t
 rfft
 
 """
+    ifft!(backend, A [, dims])
     ifft!(A [, dims])
 
 Same as [`ifft`](@ref), but operates in-place on `A`.
@@ -160,6 +205,7 @@ Same as [`ifft`](@ref), but operates in-place on `A`.
 ifft!
 
 """
+    ifft(backend, A [, dims])
     ifft(A [, dims])
 
 Multidimensional inverse FFT.
@@ -177,6 +223,7 @@ A multidimensional inverse FFT simply performs this operation along each transfo
 ifft
 
 """
+    fft!(backend, A [, dims])
     fft!(A [, dims])
 
 Same as [`fft`](@ref), but operates in-place on `A`, which must be an array of
@@ -185,6 +232,7 @@ complex floating-point numbers.
 fft!
 
 """
+    bfft(backend, A [, dims])
     bfft(A [, dims])
 
 Similar to [`ifft`](@ref), but computes an unnormalized inverse (backward)
@@ -200,6 +248,7 @@ computational steps elsewhere.)
 bfft
 
 """
+    bfft!(backend, A [, dims])
     bfft!(A [, dims])
 
 Same as [`bfft`](@ref), but operates in-place on `A`.
@@ -211,14 +260,14 @@ bfft!
 for f in (:fft, :bfft, :ifft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray{<:Real}, region) = $f(complexfloat(x), region)
-        $pf(x::AbstractArray{<:Real}, region; kws...) = $pf(complexfloat(x), region; kws...)
-        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region) = $f(complexfloat(x), region)
-        $pf(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region; kws...) = $pf(complexfloat(x), region; kws...)
+        $f(b::AbstractFFTBackend, x::AbstractArray{<:Real}, region) = $f(b, complexfloat(x), region)
+        $pf(b::AbstractFFTBackend, x::AbstractArray{<:Real}, region; kws...) = $pf(b, complexfloat(x), region; kws...)
+        $f(b::AbstractFFTBackend, x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region) = $f(b, complexfloat(x), region)
+        $pf(b::AbstractFFTBackend, x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region; kws...) = $pf(b, complexfloat(x), region; kws...)
     end
 end
-rfft(x::AbstractArray{<:Union{Integer,Rational}}, region=1:ndims(x)) = rfft(realfloat(x), region)
-plan_rfft(x::AbstractArray, region; kws...) = plan_rfft(realfloat(x), region; kws...)
+rfft(b::AbstractFFTBackend, x::AbstractArray{<:Union{Integer,Rational}}, region=1:ndims(x)) = rfft(b, realfloat(x), region)
+plan_rfft(b::AbstractFFTBackend, x::AbstractArray, region; kws...) = plan_rfft(b, realfloat(x), region; kws...)
 
 # only require implementation to provide *(::Plan{T}, ::Array{T})
 *(p::Plan{T}, x::AbstractArray) where {T} = p * copy1(T, x)
@@ -279,10 +328,10 @@ summary(p::ScaledPlan) = string(p.scale, " * ", summary(p.p))
 end
 normalization(X, region) = normalization(real(eltype(X)), size(X), region)
 
-plan_ifft(x::AbstractArray, region; kws...) =
-    ScaledPlan(plan_bfft(x, region; kws...), normalization(x, region))
-plan_ifft!(x::AbstractArray, region; kws...) =
-    ScaledPlan(plan_bfft!(x, region; kws...), normalization(x, region))
+plan_ifft(b::AbstractFFTBackend, x::AbstractArray, region; kws...) =
+    ScaledPlan(plan_bfft(b, x, region; kws...), normalization(x, region))
+plan_ifft!(b::AbstractFFTBackend, x::AbstractArray, region; kws...) =
+    ScaledPlan(plan_bfft!(b, x, region; kws...), normalization(x, region))
 
 plan_inv(p::ScaledPlan) = ScaledPlan(plan_inv(p.p), inv(p.scale))
 # Don't cache inverse of scaled plan (only inverse of inner plan)
@@ -302,20 +351,21 @@ LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
 for f in (:brfft, :irfft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray, d::Integer) = $f(x, d, 1:ndims(x))
-        $f(x::AbstractArray, d::Integer, region) = $pf(x, d, region) * x
-        $pf(x::AbstractArray, d::Integer;kws...) = $pf(x, d, 1:ndims(x);kws...)
+        $f(b::AbstractFFTBackend, x::AbstractArray, d::Integer) = $f(b, x, d, 1:ndims(x))
+        $f(b::AbstractFFTBackend, x::AbstractArray, d::Integer, region) = $pf(b, x, d, region) * x
+        $pf(b::AbstractFFTBackend, x::AbstractArray, d::Integer;kws...) = $pf(b, x, d, 1:ndims(x);kws...)
     end
 end
 
 for f in (:brfft, :irfft)
     @eval begin
-        $f(x::AbstractArray{<:Real}, d::Integer, region) = $f(complexfloat(x), d, region)
-        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, d::Integer, region) = $f(complexfloat(x), d, region)
+        $f(b::AbstractFFTBackend, x::AbstractArray{<:Real}, d::Integer, region) = $f(b, complexfloat(x), d, region)
+        $f(b::AbstractFFTBackend, x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, d::Integer, region) = $f(b, complexfloat(x), d, region)
     end
 end
 
 """
+    irfft(backend, A, d [, dims])
     irfft(A, d [, dims])
 
 Inverse of [`rfft`](@ref): for a complex array `A`, gives the corresponding real
@@ -330,6 +380,7 @@ transformed real array.)
 irfft
 
 """
+    brfft(backend, A, d [, dims])
     brfft(A, d [, dims])
 
 Similar to [`irfft`](@ref) but computes an unnormalized inverse transform (similar
@@ -351,11 +402,12 @@ function brfft_output_size(sz::Dims{N}, d::Integer, region) where {N}
     return ntuple(i -> i == d1 ? d : sz[i], Val(N))
 end
 
-plan_irfft(x::AbstractArray{Complex{T}}, d::Integer, region; kws...) where {T} =
-    ScaledPlan(plan_brfft(x, d, region; kws...),
+plan_irfft(b::AbstractFFTBackend, x::AbstractArray{Complex{T}}, d::Integer, region; kws...) where {T} =
+    ScaledPlan(plan_brfft(b, x, d, region; kws...),
                normalization(T, brfft_output_size(x, d, region), region))
 
 """
+    plan_irfft(backend, A, d [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
     plan_irfft(A, d [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
 Pre-plan an optimized inverse real-input FFT, similar to [`plan_rfft`](@ref)
@@ -543,6 +595,7 @@ fftshift(x::Frequencies) = (x.n_nonnegative-x.n:x.n_nonnegative-1)*x.multiplier
 ##############################################################################
 
 """
+    fft(backend, A [, dims])
     fft(A [, dims])
 
 Performs a multidimensional FFT of the array `A`. The optional `dims` argument specifies an
@@ -570,6 +623,7 @@ A multidimensional FFT simply performs this operation along each transformed dim
 fft
 
 """
+    plan_rfft(backend, A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
     plan_rfft(A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
 Pre-plan an optimized real-input FFT, similar to [`plan_fft`](@ref) except for
@@ -579,6 +633,7 @@ size of the transformed result, are the same as for [`rfft`](@ref).
 plan_rfft
 
 """
+    plan_brfft(backend, A, d [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
     plan_brfft(A, d [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
 Pre-plan an optimized real-input unnormalized transform, similar to
