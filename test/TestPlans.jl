@@ -34,10 +34,10 @@ Base.ndims(::InverseTestPlan{T,N}) where {T,N} = N
 AbstractFFTs.AdjointStyle(::TestPlan) = AbstractFFTs.FFTAdjointStyle()
 AbstractFFTs.AdjointStyle(::InverseTestPlan) = AbstractFFTs.FFTAdjointStyle()
 
-function AbstractFFTs.plan_fft(::TestBackend, x::AbstractArray{T}, region; kwargs...) where {T <: Complex}
+function AbstractFFTs.plan_fft(::TestBackend, x::AbstractArray{T}, region; kwargs...) where {T}
     return TestPlan{T}(region, size(x))
 end
-function AbstractFFTs.plan_bfft(::TestBackend, x::AbstractArray{T}, region; kwargs...) where {T <: Complex}
+function AbstractFFTs.plan_bfft(::TestBackend, x::AbstractArray{T}, region; kwargs...) where {T}
     return InverseTestPlan{T}(region, size(x))
 end
 

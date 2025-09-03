@@ -260,6 +260,11 @@ bfft!
 for f in (:fft, :bfft, :ifft)
     pf = Symbol("plan_", f)
     @eval begin
+        $f(x::AbstractArray{<:Real}, region) = $f(complexfloat(x), region)
+        $pf(x::AbstractArray{<:Real}, region; kws...) = $pf(complexfloat(x), region; kws...)
+        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region) = $f(complexfloat(x), region)
+        $pf(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region; kws...) = $pf(complexfloat(x), region; kws...)
+        # These methods run into ambig. if a backend does not specialise T further
         $f(b::AbstractFFTBackend, x::AbstractArray{<:Real}, region) = $f(b, complexfloat(x), region)
         $pf(b::AbstractFFTBackend, x::AbstractArray{<:Real}, region; kws...) = $pf(b, complexfloat(x), region; kws...)
         $f(b::AbstractFFTBackend, x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region) = $f(b, complexfloat(x), region)
