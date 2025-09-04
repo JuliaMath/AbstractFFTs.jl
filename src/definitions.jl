@@ -67,7 +67,7 @@ struct BackendReference
 end
 Base.setindex!(ref::BackendReference, val::Union{Missing, AbstractFFTBackend}) = ref.ref[] = val
 Base.setindex!(ref::BackendReference, val::Module) = setindex!(ref, val.backend())
-Base.getindex(ref::BackendReference) = getindex(ref.ref)
+Base.getindex(ref::BackendReference) = getindex(ref.ref)::Union{Missing, AbstractFFTBackend}
 Base.convert(::Type{BackendReference}, val::AbstractFFTBackend) = BackendReference(val)
 const fft_backend = ScopedValue(BackendReference(missing))
 
