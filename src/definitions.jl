@@ -59,20 +59,27 @@ _to1(::Tuple{Base.OneTo,Vararg{Base.OneTo}}, x) = x
 _to1(::Tuple, x) = copy1(eltype(x), x)
 
 # Abstract FFT Backend
-export AbstractFFTBackend
+export AbstractFFTBackend, fft_backend
 abstract type AbstractFFTBackend end
-const ACTIVE_BACKEND = Ref{Union{Missing, AbstractFFTBackend}}(missing)
+struct BackendReference
+    ref::Ref{Union{Missing, AbstractFFTBackend}}
+    BackendReference(val::Union{Missing, AbstractFFTBackend}) = new(Ref{Union{Missing, AbstractFFTBackend}}(val))
+end
+Base.setindex!(ref::BackendReference, val::Union{Missing, AbstractFFTBackend}) = ref.ref[] = val
+Base.setindex!(ref::BackendReference, val::Module) = setindex!(ref, val.backend())
+Base.getindex(ref::BackendReference) = getindex(ref.ref)
+Base.convert(BackendReference, val::AbstractFFTBackend) = BackendReference(val)
+const fft_backend = ScopedValue(BackendReference(missing))
 
 """
     set_active_backend!(back::Union{Missing, Module, AbstractFFTBackend})
 
 Set the default FFT plan backend. A module `back` must implement `back.backend()`.
 """
-set_active_backend!(back::Module) = set_active_backend!(back.backend())
-function set_active_backend!(back::Union{Missing, AbstractFFTBackend})
-  ACTIVE_BACKEND[] = back
+function set_active_backend!(back::Union{Missing, AbstractFFTBackend, Module})
+  fft_backend[][] = back
 end
-active_backend() = ACTIVE_BACKEND[]
+active_backend() = fft_backend[][]
 function no_backend_error() 
   error(
     """
