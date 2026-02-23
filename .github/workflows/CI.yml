@@ -1,10 +1,24 @@
 name: CI
+
 on:
   pull_request:
+    paths:
+      - '.github/workflows/CI.yml'
+      - 'ext/**'
+      - 'src/**'
+      - 'test/**'
+      - 'Project.toml'
   push:
     branches:
       - master
     tags: '*'
+    paths:
+      - '.github/workflows/CI.yml'
+      - 'ext/**'
+      - 'src/**'
+      - 'test/**'
+      - 'Project.toml'
+
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ github.event_name }}
@@ -26,7 +40,7 @@ jobs:
           - os: macos-latest # Apple Silicon
             version: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
