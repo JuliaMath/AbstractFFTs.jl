@@ -32,14 +32,14 @@ jobs:
           - '1'
         os:
           - ubuntu-latest
-          - macos-latest # Apple silicon
+          - macos-15-intel
           - windows-latest
         exclude:
           - os: macos-latest
             version: '1.0'
         include:
-          - os: macos-13 # Intel
-            version: '1.0'
+          - os: macos-latest # Apple Silicon
+            version: '1'
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
