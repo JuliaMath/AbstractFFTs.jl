@@ -8,6 +8,10 @@ export fft, ifft, bfft, fft!, ifft!, bfft!,
 include("definitions.jl")
 include("TestUtils.jl")
 
+# Create function used by multiple extension as loading order is not guaranteed
+function dualplan end
+function dual2array end
+
 if !isdefined(Base, :get_extension)
     include("../ext/AbstractFFTsChainRulesCoreExt.jl")
     include("../ext/AbstractFFTsTestExt.jl")
