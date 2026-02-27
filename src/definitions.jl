@@ -361,6 +361,12 @@ plan_irfft(x::AbstractArray{Complex{T}}, d::Integer, region; kws...) where {T} =
 Pre-plan an optimized inverse real-input FFT, similar to [`plan_rfft`](@ref)
 except for [`irfft`](@ref) and [`brfft`](@ref), respectively. The first
 three arguments have the same meaning as for [`irfft`](@ref).
+
+!!! note
+    In contrast to plans created by [`plan_ifft`](@ref), the application of
+    this plan via `mul!(A, P, Â)` will potentially **overwrite the input array** `Â`
+    with undefined data in the case of multidimensional transforms!
+
 """
 plan_irfft
 
@@ -575,6 +581,12 @@ fft
 Pre-plan an optimized real-input FFT, similar to [`plan_fft`](@ref) except for
 [`rfft`](@ref) instead of [`fft`](@ref). The first two arguments, and the
 size of the transformed result, are the same as for [`rfft`](@ref).
+
+!!! note
+    In contrast to plans created by [`plan_fft`](@ref), the application of the
+    inverse of this plan via `ldiv!(A, P, Â)` will potentially **overwrite the input array**
+    `Â` with undefined data in the case of multidimensional transforms!
+
 """
 plan_rfft
 
@@ -585,6 +597,12 @@ Pre-plan an optimized real-input unnormalized transform, similar to
 [`plan_rfft`](@ref) except for [`brfft`](@ref) instead of
 [`rfft`](@ref). The first two arguments and the size of the transformed result, are
 the same as for [`brfft`](@ref).
+
+!!! note
+    In contrast to plans created by [`plan_bfft`](@ref), the application of
+    this plan via `mul!(A, P, Â)` will potentially **overwrite the input array** `Â`
+    with undefined data in the case of multidimensional transforms!
+
 """
 plan_brfft
 
