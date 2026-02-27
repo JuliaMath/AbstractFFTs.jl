@@ -294,4 +294,44 @@ Base.:*(p::WrapperTestPlan, x::AbstractArray) = p.plan * x
 AbstractFFTs.plan_inv(p::WrapperTestPlan) = WrapperTestPlan(AbstractFFTs.plan_inv(p.plan))
 Base.inv(p::WrapperTestPlan) = WrapperTestPlan(inv(p.plan))
 
+#####
+# DCT tests, to test real-to-real plans.
+# We implement DCT-I by using its equivalence to an
+# fft applied to [x; reverse(x)[2:end-1]]
+####
+struct TestDCTIPlan{T,N,FFTPlan} <: Plan{T}
+    fftplan::FFTPlan
+    sz::NTuple{N,Int}
+    function TestPlan{T}(fftplan::FFTPlan, sz::NTuple{N,Int}) where {T,N,FFTPlan}
+        return new{T,N,FFTPlan}(fftplan, sz)
+    end
+end
+
+Base.size(p::TestDCTIPlan) = p.sz
+Base.ndims(::TestDCTIPlan{T,N}) where {T,N} = N
+
+
+_doublesize((n,)::Tuple{Int}, region) = (2n-2,)
+
+function plan_dctI(x::AbstractArray{T}, region; kwargs...) where {T}
+    return TestDCTIPlan{T}(plan_fft(Array{complex(float(T))}(undef, _doublesize(size(x), region)),region; kwargs...), size(x)) 
+end
+
+Base.:*(p::TestDCTIPlan, x::AbstractArray) = mul!(similar(x, complex(float(eltype(x)))), p, x)
+function LinearAlgebra.mul!(
+    y::AbstractArray{<:Real,N}, p::TestPlan, x::AbstractArray{<:Real,N}
+) where {N}
+    size(y) == size(p) == size(x) || throw(DimensionMismatch())
+    ret = Array{complex(float(eltype(y)))}(undef, size(p.fftplan))
+    tmp = similar(ret)
+    if N == 1
+        tmp[1:length(x)] = x
+        tmp[length(x)+1:end-1] = x[end-1:-1:2]
+        mul!(ret, p.fftplan, tmp)
+        copyto!(y, view(ret, 1:length(y)))
+    else
+        error("not implemented")
+    end
+end
+
 end
