@@ -9,7 +9,7 @@ using FiniteDifferences
 
 import Aqua
 @testset "Project quality" begin
-    Aqua.test_all(AbstractFFTs, ambiguities = VERSION >= v"1.10")
+    Aqua.test_all(AbstractFFTs)
 end
 
 Random.seed!(1234)
@@ -202,7 +202,7 @@ end
                 # type inference checks of `rrule` fail on old Julia versions
                 # for higher-dimensional arrays:
                 # https://github.com/JuliaMath/AbstractFFTs.jl/pull/58#issuecomment-916530016
-                check_inferred = ndims(x) < 3 || VERSION >= v"1.6"
+                check_inferred = ndims(x) < 3
 
                 test_frule(AbstractFFTs.fftshift, x, dims)
                 test_rrule(AbstractFFTs.fftshift, x, dims; check_inferred=check_inferred)

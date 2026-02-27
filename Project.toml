@@ -1,6 +1,6 @@
 name = "AbstractFFTs"
 uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
-version = "1.5.0"
+version = "1.6.0-dev"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
@@ -20,11 +20,11 @@ Aqua = "0.8"
 ChainRulesCore = "1"
 ChainRulesTestUtils = "1"
 FiniteDifferences = "0.12"
-LinearAlgebra = "<0.0.1, 1"
-Random = "<0.0.1, 1"
-Test = "<0.0.1, 1"
+LinearAlgebra = "1"
+Random = "1"
+Test = "1"
 Unitful = "1"
-julia = "^1.0"
+julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
