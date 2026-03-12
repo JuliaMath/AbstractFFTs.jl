@@ -1,6 +1,18 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 version: 2
 updates:
+  - package-ecosystem: "julia"
+    directories:
+      - "/"
+      - "/docs"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # Ignore package itself
+      - dependency-name: "AbstractFFTs"
+    groups:
+      per-dependency:
+        group-by: dependency-name
   - package-ecosystem: "github-actions"
     directory: "/" # Location of package manifests
     schedule:
