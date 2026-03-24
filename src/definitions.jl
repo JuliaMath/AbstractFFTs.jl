@@ -10,10 +10,26 @@ abstract type Plan{T} end
 
 eltype(::Type{<:Plan{T}}) where {T} = T
 
-# size(p) should return the size of the input array for p
-size(p::Plan, d) = size(p)[d]
+"""
+    size(p::Plan, [dim])
+
+Return the size of the input of a plan `p`, optionally at a specified dimenion `dim`.
+"""
+size(p::Plan, dim) = size(p)[dim]
 ndims(p::Plan) = length(size(p))
 length(p::Plan) = prod(size(p))::Int
+
+"""
+    fftdims(p::Plan)
+
+Return an iterable of the dimensions that are transformed by the FFT plan `p`.
+
+# Implementation
+
+For legacy reasons, the default definition of `fftdims` returns `p.region`.
+Hence this method should be implemented only for `Plan` subtypes that do not store the transformed dimensions in a field named `region`.
+"""
+fftdims(p::Plan) = p.region
 
 fftfloat(x) = _fftfloat(float(x))
 _fftfloat(::Type{T}) where {T<:BlasReal} = T
@@ -47,7 +63,7 @@ _to1(::Tuple, x) = copy1(eltype(x), x)
 for f in (:fft, :bfft, :ifft, :fft!, :bfft!, :ifft!, :rfft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray) = (y = to1(x); $pf(y) * y)
+        $f(x::AbstractArray) = $f(x, 1:ndims(x))
         $f(x::AbstractArray, region) = (y = to1(x); $pf(y, region) * y)
         $pf(x::AbstractArray; kws...) = (y = to1(x); $pf(y, 1:ndims(y); kws...))
     end
@@ -195,9 +211,9 @@ bfft!
 for f in (:fft, :bfft, :ifft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray{<:Real}, region=1:ndims(x)) = $f(complexfloat(x), region)
+        $f(x::AbstractArray{<:Real}, region) = $f(complexfloat(x), region)
         $pf(x::AbstractArray{<:Real}, region; kws...) = $pf(complexfloat(x), region; kws...)
-        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region=1:ndims(x)) = $f(complexfloat(x), region)
+        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region) = $f(complexfloat(x), region)
         $pf(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, region; kws...) = $pf(complexfloat(x), region; kws...)
     end
 end
@@ -222,6 +238,8 @@ plan_rfft(x::AbstractArray, region; kws...) = plan_rfft(realfloat(x), region; kw
 _pinv_type(p::Plan) = typeof([plan_inv(x) for x in typeof(p)[]])
 pinv_type(p::Plan) = eltype(_pinv_type(p))
 
+function plan_inv end
+
 inv(p::Plan) =
     isdefined(p, :pinv) ? p.pinv::pinv_type(p) : (p.pinv = plan_inv(p))
 \(p::Plan, x::AbstractArray) = inv(p) * x
@@ -231,10 +249,9 @@ LinearAlgebra.ldiv!(y::AbstractArray, p::Plan, x::AbstractArray) = LinearAlgebra
 # implementations only need to provide the unnormalized backwards FFT,
 # similar to FFTW, and we do the scaling generically to get the ifft:
 
-mutable struct ScaledPlan{T,P,N} <: Plan{T}
+struct ScaledPlan{T,P,N} <: Plan{T}
     p::P
     scale::N # not T, to avoid unnecessary promotion to Complex
-    pinv::Plan
     ScaledPlan{T,P,N}(p, scale) where {T,P,N} = new(p, scale)
 end
 ScaledPlan{T}(p::P, scale::N) where {T,P,N} = ScaledPlan{T,P,N}(p, scale)
@@ -242,6 +259,8 @@ ScaledPlan(p::Plan{T}, scale::Number) where {T} = ScaledPlan{T}(p, scale)
 ScaledPlan(p::ScaledPlan, α::Number) = ScaledPlan(p.p, p.scale * α)
 
 size(p::ScaledPlan) = size(p.p)
+
+fftdims(p::ScaledPlan) = fftdims(p.p)
 
 show(io::IO, p::ScaledPlan) = print(io, p.scale, " * ", p.p)
 summary(p::ScaledPlan) = string(p.scale, " * ", summary(p.p))
@@ -255,8 +274,9 @@ summary(p::ScaledPlan) = string(p.scale, " * ", summary(p.p))
 *(I::UniformScaling, p::Plan) = ScaledPlan(p, I.λ)
 *(p::Plan, I::UniformScaling) = ScaledPlan(p, I.λ)
 
-# Normalization for ifft, given unscaled bfft, is 1/prod(dimensions)
-normalization(::Type{T}, sz, region) where T = one(T) / Int(prod([sz...][[region...]]))::Int
+@inline function normalization(::Type{T}, sz, region) where T
+    one(T) / mapreduce(r -> Int(sz[r])::Int, *, region; init=1)::Int
+end
 normalization(X, region) = normalization(real(eltype(X)), size(X), region)
 
 plan_ifft(x::AbstractArray, region; kws...) =
@@ -265,6 +285,8 @@ plan_ifft!(x::AbstractArray, region; kws...) =
     ScaledPlan(plan_bfft!(x, region; kws...), normalization(x, region))
 
 plan_inv(p::ScaledPlan) = ScaledPlan(plan_inv(p.p), inv(p.scale))
+# Don't cache inverse of scaled plan (only inverse of inner plan)
+inv(p::ScaledPlan) = ScaledPlan(inv(p.p), inv(p.scale))
 
 LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
     LinearAlgebra.lmul!(p.scale, LinearAlgebra.mul!(y, p.p, x))
@@ -280,7 +302,7 @@ LinearAlgebra.mul!(y::AbstractArray, p::ScaledPlan, x::AbstractArray) =
 for f in (:brfft, :irfft)
     pf = Symbol("plan_", f)
     @eval begin
-        $f(x::AbstractArray, d::Integer) = $pf(x, d) * x
+        $f(x::AbstractArray, d::Integer) = $f(x, d, 1:ndims(x))
         $f(x::AbstractArray, d::Integer, region) = $pf(x, d, region) * x
         $pf(x::AbstractArray, d::Integer;kws...) = $pf(x, d, 1:ndims(x);kws...)
     end
@@ -288,8 +310,8 @@ end
 
 for f in (:brfft, :irfft)
     @eval begin
-        $f(x::AbstractArray{<:Real}, d::Integer, region=1:ndims(x)) = $f(complexfloat(x), d, region)
-        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, d::Integer, region=1:ndims(x)) = $f(complexfloat(x), d, region)
+        $f(x::AbstractArray{<:Real}, d::Integer, region) = $f(complexfloat(x), d, region)
+        $f(x::AbstractArray{<:Complex{<:Union{Integer,Rational}}}, d::Integer, region) = $f(complexfloat(x), d, region)
     end
 end
 
@@ -345,6 +367,16 @@ plan_irfft
 ##############################################################################
 
 """
+    fftshift!(dest, src, [dim])
+
+Nonallocating version of [`fftshift`](@ref). Stores the result of the shift of the `src` array into the `dest` array.
+"""
+function fftshift!(dest, src, dim = 1:ndims(src))
+    s = ntuple(d -> d in dim ? div(size(dest,d),2) : 0, Val(ndims(dest)))
+    circshift!(dest, src, s)
+end
+
+"""
     fftshift(x, [dim])
 
 Circular-shift along the given dimension of a periodic signal `x` centered at
@@ -356,12 +388,21 @@ swapping the first and second halves, so `fftshift` and [`ifftshift`](@ref) are
 the same.
 
 If `dim` is not given then the signal is shifted along each dimension.
+
+The output of `fftshift` is allocated. If one desires to store the output in a preallocated array, use [`fftshift!`](@ref) instead.
 """
 fftshift
 
-function fftshift(x, dim = 1:ndims(x))
-    s = ntuple(d -> d in dim ? div(size(x,d),2) : 0, ndims(x))
-    circshift(x, s)
+fftshift(x, dim = 1:ndims(x)) = fftshift!(similar(x), x, dim)
+
+"""
+    ifftshift!(dest, src, [dim])
+
+Nonallocating version of [`ifftshift`](@ref). Stores the result of the shift of the `src` array into the `dest` array.
+"""
+function ifftshift!(dest, src, dim = 1:ndims(src))
+    s = ntuple(d -> d in dim ? -div(size(src,d),2) : 0, Val(ndims(src)))
+    circshift!(dest, src, s)
 end
 
 """
@@ -376,13 +417,12 @@ swapping the first and second halves, so [`fftshift`](@ref) and `ifftshift` are
 the same.
 
 If `dim` is not given then the signal is shifted along each dimension.
+
+The output of `ifftshift` is allocated. If one desires to store the output in a preallocated array, use [`ifftshift!`](@ref) instead.
 """
 ifftshift
 
-function ifftshift(x, dim = 1:ndims(x))
-    s = ntuple(d -> d in dim ? -div(size(x,d),2) : 0, ndims(x))
-    circshift(x, s)
-end
+ifftshift(x, dim = 1:ndims(x)) = ifftshift!(similar(x), x, dim)
 
 ##############################################################################
 
@@ -419,9 +459,13 @@ Broadcast.broadcasted(::typeof(*), x::Number, f::Frequencies) = Broadcast.broadc
 Broadcast.broadcasted(::typeof(/), f::Frequencies, x::Number) = Frequencies(f.n_nonnegative, f.n, f.multiplier / x)
 Broadcast.broadcasted(::typeof(\), x::Number, f::Frequencies) = Broadcast.broadcasted(/, f, x)
 
-Base.maximum(f::Frequencies) = (f.n_nonnegative - ifelse(f.multiplier >= 0, 1, f.n)) * f.multiplier
-Base.minimum(f::Frequencies) = (f.n_nonnegative - ifelse(f.multiplier >= 0, f.n, 1)) * f.multiplier
+Base.maximum(f::Frequencies{T}) where T = (f.n_nonnegative - ifelse(f.multiplier >= zero(T), 1, f.n)) * f.multiplier
+Base.minimum(f::Frequencies{T}) where T = (f.n_nonnegative - ifelse(f.multiplier >= zero(T), f.n, 1)) * f.multiplier
 Base.extrema(f::Frequencies) = (minimum(f), maximum(f))
+
+function show(io::IO, f::Frequencies)
+    print(io, Frequencies, "(", f.n_nonnegative, ", ", f.n, ", ", f.multiplier, ")")
+end
 
 """
     fftfreq(n, fs=1)
@@ -545,3 +589,158 @@ Pre-plan an optimized real-input unnormalized transform, similar to
 the same as for [`brfft`](@ref).
 """
 plan_brfft
+
+##############################################################################
+
+"""
+    AbstractFFTs.AdjointStyle(::Plan)
+
+Return the adjoint style of a plan, enabling automatic computation of adjoint plans via
+[`Base.adjoint`](@ref). Instructions for supporting adjoint styles are provided in the
+[implementation instructions](implementations.md#Defining-a-new-implementation).
+"""
+abstract type AdjointStyle end
+
+"""
+    FFTAdjointStyle()
+
+Adjoint style for complex to complex discrete Fourier transforms that normalize
+the output analogously to [`fft`](@ref).
+
+Since the Fourier transform is unitary up to a scaling, the adjoint simply applies 
+the transform's inverse with an appropriate scaling.
+"""
+struct FFTAdjointStyle <: AdjointStyle end
+
+"""
+    RFFTAdjointStyle()
+
+Adjoint style for real to complex discrete Fourier transforms that halve one of
+the output's dimensions and normalize the output analogously to [`rfft`](@ref).
+    
+Since the Fourier transform is unitary up to a scaling, the adjoint applies the transform's 
+inverse, but with appropriate scaling and additional logic to handle the fact that the
+output is projected to exploit its conjugate symmetry (see [`rfft`](@ref)).
+"""
+struct RFFTAdjointStyle <: AdjointStyle end 
+
+"""
+    IRFFTAdjointStyle(d::Dim)
+
+Adjoint style for complex to real discrete Fourier transforms that expect an input
+with a halved dimension and normalize the output analogously to [`irfft`](@ref),
+where `d` is the original length of the dimension.
+    
+Since the Fourier transform is unitary up to a scaling, the adjoint applies the transform's 
+inverse, but with appropriate scaling and additional logic to handle the fact that the
+input is projected to exploit its conjugate symmetry (see [`irfft`](@ref)). 
+"""
+struct IRFFTAdjointStyle <: AdjointStyle
+    dim::Int
+end
+
+"""
+    UnitaryAdjointStyle()
+
+Adjoint style for unitary transforms, whose adjoint equals their inverse.
+"""
+struct UnitaryAdjointStyle <: AdjointStyle end
+
+struct AdjointPlan{T,P<:Plan} <: Plan{T}
+    p::P
+    AdjointPlan{T,P}(p) where {T,P} = new(p)
+end
+
+# We eagerly form the plan inverse in the adjoint(p) call, which will be cached for subsequent calls.
+# This is reasonable, as inv(p) would do the same, and necessary in order to compute the correct input
+# type for the adjoint plan and encode it in its type.
+"""
+    (p::Plan)'
+    adjoint(p::Plan)
+
+Return a plan that performs the adjoint operation of the original plan.
+
+!!! warning
+    Adjoint plans do not currently support `LinearAlgebra.mul!`. Further, as a new addition to `AbstractFFTs`, 
+    coverage of `Base.adjoint` in downstream implementations may be limited. 
+"""
+Base.adjoint(p::Plan{T}) where {T} = AdjointPlan{eltype(inv(p)), typeof(p)}(p)
+Base.adjoint(p::AdjointPlan) = p.p
+# always have AdjointPlan inside ScaledPlan.
+Base.adjoint(p::ScaledPlan) = ScaledPlan(p.p', p.scale)
+
+size(p::AdjointPlan) = size(inv(p.p))
+fftdims(p::AdjointPlan) = fftdims(p.p)
+
+Base.:*(p::AdjointPlan, x::AbstractArray) = adjoint_mul(p.p, x)
+
+"""
+    adjoint_mul(p::Plan, x::AbstractArray)
+
+Multiply an array `x` by the adjoint of a plan `p`. This is equivalent to `p' * x`.
+
+Implementations of a new adjoint style `AS <: AbstractFFTs.AdjointStyle` should define
+`adjoint_mul(::Plan, ::AbstractArray, ::AS)`.
+"""
+adjoint_mul(p::Plan, x::AbstractArray) = adjoint_mul(p, x, AdjointStyle(p))
+
+function adjoint_mul(p::Plan{T}, x::AbstractArray, ::FFTAdjointStyle) where {T}
+    dims = fftdims(p)
+    N = normalization(T, size(p), dims)
+    pinv = inv(p)
+    # Ensure that we do only one pass over the array by combining the normalization with the plan.
+    return (inv(N) * pinv) * x
+end
+
+function adjoint_mul(p::Plan{T}, x::AbstractArray, ::RFFTAdjointStyle) where {T<:Real}
+    dims = fftdims(p)
+    N = normalization(T, size(p), dims)
+    halfdim = first(dims)
+    d = size(p, halfdim)
+    pinv = inv(p)
+    n = size(pinv, halfdim)
+    # Optimization: when pinv is a ScaledPlan, fuse the scaling into our map to ensure we do not loop over x twice.
+    scale = pinv isa ScaledPlan ? pinv.scale / 2N : inv(2N)
+    twoscale = 2 * scale 
+    unscaled_pinv = pinv isa ScaledPlan ? pinv.p : pinv 
+    y = map(x, CartesianIndices(x)) do xj, j
+        i = j[halfdim]
+        yj = if i == 1 || (i == n && 2 * (i - 1) == d)
+            xj * twoscale
+        else
+            xj * scale
+        end
+        return yj
+    end
+    return unscaled_pinv * y
+end
+
+function adjoint_mul(p::Plan{T}, x::AbstractArray, ::IRFFTAdjointStyle) where {T}
+    dims = fftdims(p)
+    N = normalization(real(T), size(inv(p)), dims)
+    halfdim = first(dims)
+    n = size(p, halfdim)
+    pinv = inv(p)
+    d = size(pinv, halfdim)
+    # Optimization: when pinv is a ScaledPlan, fuse the scaling into our map to ensure we do not loop over x twice.
+    scale = pinv isa ScaledPlan ? pinv.scale / N : inv(N)
+    twoscale = 2 * scale 
+    unscaled_pinv = pinv isa ScaledPlan ? pinv.p : pinv 
+    y = unscaled_pinv * x
+    z = map(y, CartesianIndices(y)) do yj, j
+        i = j[halfdim]
+        zj = if i == 1 || (i == n && 2 * (i - 1) == d)
+            yj * scale
+        else
+            yj * twoscale
+        end
+        return zj
+    end
+    return z
+end
+
+adjoint_mul(p::Plan, x::AbstractArray, ::UnitaryAdjointStyle) = p \ x
+
+# Analogously to ScaledPlan, define both plan_inv (for no caching) and inv (caches inner plan only).
+plan_inv(p::AdjointPlan) = adjoint(plan_inv(p.p)) 
+inv(p::AdjointPlan) = adjoint(inv(p.p))
