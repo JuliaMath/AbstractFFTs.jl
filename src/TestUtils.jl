@@ -60,16 +60,11 @@ we allow specifying `copy_input=true` to allow for this behaviour in tests by co
 """
 function test_plan_adjoint end
 
-if isdefined(Base, :get_extension) && isdefined(Base.Experimental, :register_error_hint)
-    function __init__()
-        # Better error message if users forget to load Test
-        Base.Experimental.register_error_hint(MethodError) do io, exc, _, _
-            if any(f -> (f === exc.f), (test_real_ffts, test_complex_ffts, test_plan, test_plan_adjoint)) &&
-                (Base.get_extension(AbstractFFTs, :AbstractFFTsTestExt) === nothing)
-                print(io, "\nDid you forget to load Test?")
-            end
-        end
-    end
-end
+_test_extension_error() = throw(ArgumentError("Did you forget to load Test?"))
+
+test_complex_ffts(args...; kwargs...) = _test_extension_error()
+test_real_ffts(args...; kwargs...) = _test_extension_error()
+test_plan(args...; kwargs...) = _test_extension_error()
+test_plan_adjoint(args...; kwargs...) = _test_extension_error()
 
 end
