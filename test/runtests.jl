@@ -16,6 +16,7 @@ Random.seed!(1234)
 
 # Load example plan implementation.
 include("TestPlans.jl")
+TestPlans.activate!()
 
 # Run interface tests for TestPlans 
 AbstractFFTs.TestUtils.test_complex_ffts(Array)

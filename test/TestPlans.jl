@@ -4,6 +4,10 @@ using LinearAlgebra
 using AbstractFFTs
 using AbstractFFTs: Plan
 
+struct TestBackend <: AbstractFFTBackend end
+backend() = TestBackend()
+activate!() = AbstractFFTs.set_active_backend!(TestPlans)
+
 mutable struct TestPlan{T,N,G} <: Plan{T}
     region::G
     sz::NTuple{N,Int}
@@ -30,10 +34,10 @@ Base.ndims(::InverseTestPlan{T,N}) where {T,N} = N
 AbstractFFTs.AdjointStyle(::TestPlan) = AbstractFFTs.FFTAdjointStyle()
 AbstractFFTs.AdjointStyle(::InverseTestPlan) = AbstractFFTs.FFTAdjointStyle()
 
-function AbstractFFTs.plan_fft(x::AbstractArray{T}, region; kwargs...) where {T}
+function AbstractFFTs.plan_fft(::TestBackend, x::AbstractArray{T}, region; kwargs...) where {T}
     return TestPlan{T}(region, size(x))
 end
-function AbstractFFTs.plan_bfft(x::AbstractArray{T}, region; kwargs...) where {T}
+function AbstractFFTs.plan_bfft(::TestBackend, x::AbstractArray{T}, region; kwargs...) where {T}
     return InverseTestPlan{T}(region, size(x))
 end
 
@@ -119,10 +123,10 @@ end
 AbstractFFTs.AdjointStyle(::TestRPlan) = AbstractFFTs.RFFTAdjointStyle()
 AbstractFFTs.AdjointStyle(p::InverseTestRPlan) = AbstractFFTs.IRFFTAdjointStyle(p.d)
 
-function AbstractFFTs.plan_rfft(x::AbstractArray{T}, region; kwargs...) where {T<:Real}
+function AbstractFFTs.plan_rfft(::TestBackend, x::AbstractArray{T}, region; kwargs...) where {T<:Real}
     return TestRPlan{T}(region, size(x))
 end
-function AbstractFFTs.plan_brfft(x::AbstractArray{Complex{T}}, d, region; kwargs...) where {T}
+function AbstractFFTs.plan_brfft(::TestBackend, x::AbstractArray{Complex{T}}, d, region; kwargs...) where {T}
     return InverseTestRPlan{T}(d, region, size(x))
 end
 function AbstractFFTs.plan_inv(p::TestRPlan{T,N}) where {T,N}
@@ -265,10 +269,10 @@ Base.ndims(p::InplaceTestPlan) = ndims(p.plan)
 AbstractFFTs.fftdims(p::InplaceTestPlan) = fftdims(p.plan)
 AbstractFFTs.AdjointStyle(p::InplaceTestPlan) = AbstractFFTs.AdjointStyle(p.plan)
 
-function AbstractFFTs.plan_fft!(x::AbstractArray, region; kwargs...)
+function AbstractFFTs.plan_fft!(::TestBackend, x::AbstractArray, region; kwargs...)
     return InplaceTestPlan(plan_fft(x, region; kwargs...))
 end
-function AbstractFFTs.plan_bfft!(x::AbstractArray, region; kwargs...)
+function AbstractFFTs.plan_bfft!(::TestBackend, x::AbstractArray, region; kwargs...)
     return InplaceTestPlan(plan_bfft(x, region; kwargs...))
 end
 
