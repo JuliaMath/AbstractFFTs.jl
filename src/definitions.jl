@@ -103,14 +103,14 @@ plan_bfft
     plan_fft(A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
 Pre-plan an optimized FFT along given dimensions (`dims`) of arrays matching the shape and
-type of `A`.  (The first two arguments have the same meaning as for [`fft`](@ref).)
+type of array `A`.  (The first two arguments have the same meaning as for [`fft`](@ref).)
 Returns an object `P` which represents the linear operator computed by the FFT, and which
 contains all of the information needed to compute `fft(A, dims)` quickly.
 
 To apply `P` to an array `A`, use `P * A`; in general, the syntax for applying plans is much
 like that of matrices.  (A plan can only be applied to arrays of the same size as the `A`
 for which the plan was created.)  You can also apply a plan with a preallocated output array `Â`
-by calling `mul!(Â, plan, A)`.  (For `mul!`, however, the input array `A` must
+by calling `LinearAlgebra.mul!(Â, plan, A)`.  (For `mul!`, however, the input array `A` must
 be a complex floating-point array like the output `Â`.) You can compute the inverse-transform plan by `inv(P)`
 and apply the inverse plan with `P \\ Â` (the inverse plan is cached and reused for
 subsequent calls to `inv` or `\\`), and apply the inverse plan to a pre-allocated output
