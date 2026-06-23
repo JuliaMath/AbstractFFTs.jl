@@ -102,32 +102,54 @@ plan_bfft
 """
     plan_fft(A [, dims]; flags=FFTW.ESTIMATE, timelimit=Inf)
 
-Pre-plan an optimized FFT along given dimensions (`dims`) of arrays matching the shape and
-type of `A`.  (The first two arguments have the same meaning as for [`fft`](@ref).)
-Returns an object `P` which represents the linear operator computed by the FFT, and which
-contains all of the information needed to compute `fft(A, dims)` quickly.
+Pre-plan an optimized FFT for arrays of the same size and shape as `A`, acting along
+dimensions `dims`. The returned plan object `P` contains the information and 
+preallocated buffers needed to efficiently perform that transform. 
 
-To apply `P` to an array `A`, use `P * A`; in general, the syntax for applying plans is much
-like that of matrices.  (A plan can only be applied to arrays of the same size as the `A`
-for which the plan was created.)  You can also apply a plan with a preallocated output array `Â`
-by calling `mul!(Â, plan, A)`.  (For `mul!`, however, the input array `A` must
-be a complex floating-point array like the output `Â`.) You can compute the inverse-transform plan by `inv(P)`
-and apply the inverse plan with `P \\ Â` (the inverse plan is cached and reused for
-subsequent calls to `inv` or `\\`), and apply the inverse plan to a pre-allocated output
-array `A` with `ldiv!(A, P, Â)`.
+### Applying Plans
 
-The `flags` argument is a bitwise-or of FFTW planner flags, defaulting to `FFTW.ESTIMATE`.
-e.g. passing `FFTW.MEASURE` or `FFTW.PATIENT` will instead spend several seconds (or more)
-benchmarking different possible FFT algorithms and picking the fastest one; see the FFTW
-manual for more information on planner flags.  The optional `timelimit` argument specifies a
-rough upper bound on the allowed planning time, in seconds. Passing `FFTW.MEASURE` or
-`FFTW.PATIENT` may cause the input array `A` to be overwritten with zeros during plan
-creation.
+Plans are applied using a syntax similar to matrix operations. To apply the plan `P` to an
+array `A`, use `P * A`, which returns a new array containing the transformed data. To use a 
+preallocated output array `Â`, call `mul!(Â, P, A)`. A plan can only be applied to arrays 
+of the same size and type as the array `A` for which the plan was created. For `mul!`, both
+the input and output arrays must be complex floating-point arrays. 
 
-[`plan_fft!`](@ref) is the same as [`plan_fft`](@ref) but creates a
-plan that operates in-place on its argument (which must be an array of complex
-floating-point numbers). [`plan_ifft`](@ref) and so on are similar but produce
-plans that perform the equivalent of the inverse transforms [`ifft`](@ref) and so on.
+### Inverse transforms
+
+When a plan `P` is available, `inv(P)` will compute its inverse, which can then be applied
+via `P \\ Â`, which returns a new array. Alternately, use `ldiv!(A, P, Â)` to store the
+results in the preallocated output array `A`. Inverse plans are automatically cached and 
+reused for subsequent calls. When only the inverse plan is needed, generate it directly
+with [`plan_ifft`](@ref).
+
+### Planner Flags and Performance
+
+Planner flags are back-end specific and the default back-end, FFTW, takes two keyword options.
+The `flags` argument is a bitwise-OR of FFTW planner flags that control the planning strategy.
+The optional `timelimit` (in seconds) sets a rough upper bound on planning time.
+
+- `FFTW.ESTIMATE` (default): A fast heuristic-based approach.
+- `FFTW.MEASURE`, `FFTW.PATIENT`, `FFTW.EXHAUSTIVE`: These flags benchmark different FFT
+  algorithms to find the fastest one for your specific input. This can take a significant
+  amount of time and may overwrite `A`. 
+
+For more details, see §4.2 of the [FFTW Manual](https://www.fftw.org/fftw3_doc/Planner-Flags.html).
+
+> **Warning**: Using flags other than `FFTW.ESTIMATE` may cause the input array `A` to be
+> overwritten with zeros during plan creation.
+
+### Parallel Processing and Serialization
+
+Plan objects may contain pointers to internal buffers and thus should not be serialized or 
+copied. In parallel environments, each worker process requires its own separately-constructed
+plan object. Some back-ends provide mechanisms for reusing benchmarks, like FFTW's "wisdom"
+mechanism.
+
+### Related Functions
+
+- [`plan_fft!`](@ref): Creates a plan that computes the FFT in-place.
+- [`plan_ifft`](@ref), [`plan_bfft`](@ref), etc.: Create plans for the corresponding
+  inverse and unnormalized transforms.
 """
 plan_fft
 
